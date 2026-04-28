@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   },
   description:
     "3M Ministry forme et envoie des leaders pour multiplier l'Église au Québec — à travers l'Église locale La Cité Mascouche.",
-  metadataBase: new URL("https://3m-ministry.vercel.app"),
+  metadataBase: new URL("https://3mministry.com"),
 };
 
 export default function RootLayout({
