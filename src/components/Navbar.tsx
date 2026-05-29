@@ -5,9 +5,10 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogIn, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Locale } from "@/i18n/config";
+import type { UserRole } from "@/lib/supabase/types";
 import { Button } from "@/components/ui/Button";
 
 type NavLabels = {
@@ -18,14 +19,21 @@ type NavLabels = {
   partner: string;
   contact: string;
   cta: string;
+  login: string;
+  portail: string;
+  logout: string;
 };
 
 export function Navbar({
   locale,
   labels,
+  authed = false,
+  role = null,
 }: {
   locale: Locale;
   labels: NavLabels;
+  authed?: boolean;
+  role?: UserRole | null;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -53,6 +61,13 @@ export function Navbar({
     { href: `/${locale}/partner`, label: labels.partner },
     { href: `/${locale}/contact`, label: labels.contact },
   ];
+
+  const portailHref =
+    role === "admin"
+      ? `/${locale}/portail/admin`
+      : role === "coach"
+        ? `/${locale}/portail/coach`
+        : `/${locale}/portail/etudiant`;
 
   return (
     <header
@@ -122,6 +137,23 @@ export function Navbar({
           >
             {otherLocale.toUpperCase()}
           </Link>
+          {authed ? (
+            <Link
+              href={portailHref}
+              className="hidden h-9 items-center gap-2 rounded-full border border-brand/40 bg-brand/10 px-4 text-sm font-medium text-foreground transition hover:bg-brand/20 hover:border-brand/70 md:inline-flex"
+            >
+              <LayoutDashboard size={15} />
+              {labels.portail}
+            </Link>
+          ) : (
+            <Link
+              href={`/${locale}/login`}
+              className="hidden h-9 items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 text-sm font-medium text-foreground/90 transition hover:bg-white/10 hover:border-brand/40 hover:text-foreground md:inline-flex"
+            >
+              <LogIn size={15} />
+              {labels.login}
+            </Link>
+          )}
           <Button
             href={`/${locale}/partner`}
             size="md"
@@ -160,6 +192,21 @@ export function Navbar({
                     {l.label}
                   </Link>
                 ))}
+                {authed ? (
+                  <Link
+                    href={portailHref}
+                    className="rounded-2xl px-4 py-3 text-base text-brand transition hover:bg-white/5"
+                  >
+                    {labels.portail}
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/${locale}/login`}
+                    className="rounded-2xl px-4 py-3 text-base text-foreground/90 transition hover:bg-white/5"
+                  >
+                    {labels.login}
+                  </Link>
+                )}
               </div>
               <div className="mt-4 flex items-center justify-between gap-3">
                 <Link

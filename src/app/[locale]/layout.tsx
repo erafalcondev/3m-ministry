@@ -1,7 +1,5 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
 import { locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 
@@ -47,13 +45,5 @@ export default async function LocaleLayout({
 }) {
   const { locale } = await params;
   if (!locales.includes(locale as Locale)) notFound();
-  const dict = getDictionary(locale as Locale);
-
-  return (
-    <>
-      <Navbar locale={locale as Locale} labels={dict.nav} />
-      <main className="relative">{children}</main>
-      <Footer locale={locale as Locale} dict={dict} />
-    </>
-  );
+  return <>{children}</>;
 }
