@@ -79,20 +79,22 @@ export default async function CohortDetailPage({
     });
   }
 
-  // Eligible students = approved students not in any cohort (or even simpler: not in this one).
-  const { data: allStudents } = await supabase
+  // Eligible = any approved contact not already in this cohort.
+  // (The doc explicitly counts coaches and team leaders as embedded in the
+  // cohort culture, not just students — so we don't filter by role.)
+  const { data: allContacts } = await supabase
     .from("profiles")
-    .select("id,email,full_name")
-    .eq("role", "student")
+    .select("id,email,full_name,role")
     .eq("status", "approved")
     .order("full_name");
   const memberSet = new Set(studentIds);
-  const eligible = (allStudents ?? [])
+  const eligible = (allContacts ?? [])
     .filter((s) => !memberSet.has(s.id as string))
     .map((s) => ({
       id: s.id as string,
       label: (s.full_name as string | null) || (s.email as string),
       email: s.email as string,
+      role: s.role as string,
     }));
 
   const { data: milestones } = await supabase

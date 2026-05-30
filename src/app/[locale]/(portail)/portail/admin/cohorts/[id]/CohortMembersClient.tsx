@@ -13,7 +13,7 @@ import type { Locale } from "@/i18n/config";
 type CohortsDict = Dictionary["portail"]["cohorts"];
 
 type Student = { id: string; label: string; email: string; status: string; joinedAt: string };
-type EligibleOption = { id: string; label: string; email: string };
+type EligibleOption = { id: string; label: string; email: string; role?: string };
 
 export function CohortMembersClient({
   cohortId,
@@ -77,7 +77,11 @@ export function CohortMembersClient({
             >
               <div className="flex-1 min-w-[240px]">
                 <SearchPicker
-                  options={eligible.map((s) => ({ id: s.id, label: s.label, secondary: s.email }))}
+                  options={eligible.map((s) => ({
+                    id: s.id,
+                    label: s.label,
+                    secondary: s.role ? `${s.email} · ${s.role}` : s.email,
+                  }))}
                   value={selected}
                   onChange={setSelected}
                   placeholder={dict.detailAddMember}

@@ -25,6 +25,7 @@ import {
   CalendarRange,
   FileDown,
   Heart,
+  Library,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBrowserSupabase } from "@/lib/supabase/client";
@@ -52,6 +53,8 @@ function getNavSections(
           { href: `${base}/admin/users`, label: dict.sidebar.links.users, icon: <UserCog size={16} /> },
           { href: `${base}/admin/programs`, label: dict.sidebar.links.programs, icon: <GraduationCap size={16} /> },
           { href: `${base}/admin/cohorts`, label: dict.sidebar.links.cohorts, icon: <Layers size={16} /> },
+          { href: `${base}/admin/courses`, label: dict.sidebar.links.courses, icon: <BookOpen size={16} /> },
+          { href: `${base}/admin/resources`, label: dict.sidebar.links.dam, icon: <Library size={16} /> },
           { href: `${base}/admin/timeline`, label: dict.sidebar.links.timeline, icon: <CalendarRange size={16} /> },
           { href: `${base}/admin/assignments`, label: dict.sidebar.links.assignments_admin, icon: <Link2 size={16} /> },
           { href: `${base}/admin/exports`, label: dict.sidebar.links.exports, icon: <FileDown size={16} /> },
