@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Mail, Calendar, BookOpen, ClipboardList, Clock, Eye, Lock } from "lucide-react";
+import { ArrowLeft, Mail, Calendar, BookOpen, ClipboardList, Clock, Eye, Lock, CheckCircle2 } from "lucide-react";
 import { type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { requireRole, STAFF } from "@/lib/portail/access";
 import { ContactNotesClient } from "./ContactNotesClient";
+import { CompletionToggle } from "./CompletionToggle";
 
 function fmtDate(iso: string, locale: Locale) {
   return new Date(iso).toLocaleDateString(locale === "fr" ? "fr-CA" : "en-CA", {
@@ -214,6 +215,36 @@ export default async function ContactPage({
     }
   }
 
+  // Completion state for this student
+  const [{ data: courseCompletions }, { data: asgCompletions }] = await Promise.all([
+    supabase
+      .from("student_course_completion")
+      .select("course_id,completed_at")
+      .eq("student_id", id),
+    supabase
+      .from("student_assignment_completion")
+      .select("assignment_id,completed_at")
+      .eq("student_id", id),
+  ]);
+  const completedCourseIds = new Set((courseCompletions ?? []).map((c) => c.course_id as string));
+  const completedAsgIds = new Set((asgCompletions ?? []).map((a) => a.assignment_id as string));
+  const courseCompletedAt = new Map(
+    (courseCompletions ?? []).map((c) => [c.course_id as string, c.completed_at as string]),
+  );
+  const asgCompletedAt = new Map(
+    (asgCompletions ?? []).map((a) => [a.assignment_id as string, a.completed_at as string]),
+  );
+
+  const allAssignmentsForStudent = upcomingHomework; // already scoped to accessible courses
+  const totalCount = enrolledCourses.length + allAssignmentsForStudent.length;
+  const doneCount = completedCourseIds.size + completedAsgIds.size;
+  const completionPct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+
+  const activeCourses = enrolledCourses.filter((c) => !completedCourseIds.has(c.id));
+  const completedCourses = enrolledCourses.filter((c) => completedCourseIds.has(c.id));
+  const activeAssignments = allAssignmentsForStudent.filter((a) => !completedAsgIds.has(a.id));
+  const completedAssignments = allAssignmentsForStudent.filter((a) => completedAsgIds.has(a.id));
+
   // Notes the current user is allowed to see (RLS filters automatically).
   const { data: notes } = await supabase
     .from("contact_notes")
@@ -343,19 +374,42 @@ export default async function ContactPage({
         )}
       </section>
 
-      {/* Enrolled courses */}
-      {enrolledCourses.length > 0 && (
+      {/* Completion progress */}
+      {totalCount > 0 && contact.role === "student" && (
+        <section className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-display text-base text-foreground">
+              {dict.portail.contact.completionTitle}
+            </h2>
+            <span className="text-xs text-muted">
+              {doneCount} / {totalCount} · {completionPct}%
+            </span>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/5">
+            <div
+              className="h-full rounded-full bg-brand transition-all"
+              style={{ width: `${completionPct}%` }}
+            />
+          </div>
+          <p className="mt-2 text-[11px] uppercase tracking-[0.18em] text-muted">
+            {dict.portail.contact.completionLabel}
+          </p>
+        </section>
+      )}
+
+      {/* Enrolled courses (active) */}
+      {activeCourses.length > 0 && (
         <section className="mt-8">
           <h2 className="mb-3 flex items-center gap-2 font-display text-lg text-foreground">
             <BookOpen size={18} className="text-brand" />
             {dict.portail.contact.coursesTitle}
           </h2>
           <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
-            {enrolledCourses.map((c) => (
-              <li key={c.id}>
+            {activeCourses.map((c) => (
+              <li key={c.id} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm">
                 <Link
                   href={`/${locale}/portail/admin/courses/${c.id}`}
-                  className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm transition hover:border-brand/40 hover:bg-brand/[0.06]"
+                  className="flex flex-1 items-center gap-3 min-w-0 transition hover:text-brand"
                 >
                   {c.programColor && (
                     <span className="h-2 w-2 rounded-full" style={{ background: c.programColor }} aria-hidden />
@@ -365,26 +419,37 @@ export default async function ContactPage({
                     <span className="text-[10px] uppercase tracking-[0.18em] text-muted">{c.programCode}</span>
                   )}
                 </Link>
+                {me.role === "admin" && contact.role === "student" && (
+                  <CompletionToggle
+                    studentId={id}
+                    table="student_course_completion"
+                    idColumn="course_id"
+                    refId={c.id}
+                    completed={false}
+                    labelMark={dict.portail.contact.markCompleteCourse}
+                    labelUndo={dict.portail.contact.undoCompleteCourse}
+                  />
+                )}
               </li>
             ))}
           </ul>
         </section>
       )}
 
-      {/* Upcoming homework / deadlines */}
-      {upcomingHomework.length > 0 && (
+      {/* Active homework */}
+      {activeAssignments.length > 0 && (
         <section className="mt-8">
           <h2 className="mb-3 flex items-center gap-2 font-display text-lg text-foreground">
             <ClipboardList size={18} className="text-brand" />
             {dict.portail.contact.upcomingTitle}
           </h2>
           <ul className="space-y-2">
-            {upcomingHomework.slice(0, 8).map((h) => (
+            {activeAssignments.slice(0, 12).map((h) => (
               <li
                 key={h.id}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm"
               >
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-foreground">{h.title}</p>
                   <p className="text-xs text-muted">{h.courseTitle}</p>
                 </div>
@@ -394,8 +459,107 @@ export default async function ContactPage({
                     {fmtDate(h.dueDate, locale as Locale)}
                   </span>
                 )}
+                {me.role === "admin" && contact.role === "student" && (
+                  <CompletionToggle
+                    studentId={id}
+                    table="student_assignment_completion"
+                    idColumn="assignment_id"
+                    refId={h.id}
+                    completed={false}
+                    labelMark={dict.portail.contact.markCompleteAssignment}
+                    labelUndo={dict.portail.contact.undoCompleteAssignment}
+                  />
+                )}
               </li>
             ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Completed sections */}
+      {completedCourses.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-3 flex items-center gap-2 font-display text-lg text-foreground">
+            <CheckCircle2 size={18} className="text-emerald-300" />
+            {dict.portail.contact.completedCoursesTitle}
+          </h2>
+          <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            {completedCourses.map((c) => {
+              const at = courseCompletedAt.get(c.id);
+              return (
+                <li
+                  key={c.id}
+                  className="flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.04] px-4 py-3 text-sm"
+                >
+                  <Link
+                    href={`/${locale}/portail/admin/courses/${c.id}`}
+                    className="flex flex-1 items-center gap-3 min-w-0"
+                  >
+                    <CheckCircle2 size={14} className="text-emerald-300" />
+                    <span className="min-w-0 flex-1 truncate text-foreground line-through decoration-muted/30">
+                      {c.title}
+                    </span>
+                    {at && (
+                      <span className="text-[10px] text-muted">
+                        {dict.portail.contact.completedOn} {fmtDate(at, locale as Locale)}
+                      </span>
+                    )}
+                  </Link>
+                  {me.role === "admin" && (
+                    <CompletionToggle
+                      studentId={id}
+                      table="student_course_completion"
+                      idColumn="course_id"
+                      refId={c.id}
+                      completed={true}
+                      labelMark={dict.portail.contact.markCompleteCourse}
+                      labelUndo={dict.portail.contact.undoCompleteCourse}
+                    />
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {completedAssignments.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-3 flex items-center gap-2 font-display text-lg text-foreground">
+            <CheckCircle2 size={18} className="text-emerald-300" />
+            {dict.portail.contact.completedHomeworkTitle}
+          </h2>
+          <ul className="space-y-2">
+            {completedAssignments.map((h) => {
+              const at = asgCompletedAt.get(h.id);
+              return (
+                <li
+                  key={h.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.04] px-4 py-3 text-sm"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-foreground line-through decoration-muted/30">{h.title}</p>
+                    <p className="text-xs text-muted">{h.courseTitle}</p>
+                  </div>
+                  {at && (
+                    <span className="text-[10px] text-muted">
+                      {dict.portail.contact.completedOn} {fmtDate(at, locale as Locale)}
+                    </span>
+                  )}
+                  {me.role === "admin" && (
+                    <CompletionToggle
+                      studentId={id}
+                      table="student_assignment_completion"
+                      idColumn="assignment_id"
+                      refId={h.id}
+                      completed={true}
+                      labelMark={dict.portail.contact.markCompleteAssignment}
+                      labelUndo={dict.portail.contact.undoCompleteAssignment}
+                    />
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

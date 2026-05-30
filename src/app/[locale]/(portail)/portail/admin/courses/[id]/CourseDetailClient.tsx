@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Trash2, FileText, Send, Layers, ExternalLink } from "lucide-react";
+import { Plus, X, Trash2, FileText, Send, Layers, ExternalLink, Pencil, Check } from "lucide-react";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import { SearchPicker } from "@/components/ui/SearchPicker";
 import { DatePicker } from "@/components/ui/DatePicker";
@@ -82,6 +82,13 @@ export function CourseDetailClient({
   const [studentAddOpen, setStudentAddOpen] = useState(false);
   const [studentPick, setStudentPick] = useState("");
 
+  // Assignment editing
+  const [editingAsgId, setEditingAsgId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editLink, setEditLink] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [editDue, setEditDue] = useState("");
+
   // Notes composer
   const [noteBody, setNoteBody] = useState("");
 
@@ -131,6 +138,34 @@ export function CourseDetailClient({
       const supabase = getBrowserSupabase();
       const { error } = await supabase.from("assignments").delete().eq("id", id);
       if (!error) router.refresh();
+    });
+  }
+
+  function startEditAssignment(a: Assignment) {
+    setEditingAsgId(a.id);
+    setEditTitle(a.title);
+    setEditLink(a.externalUrl ?? "");
+    setEditNotes(a.instructions ?? "");
+    setEditDue(a.dueDate ?? "");
+  }
+
+  function saveEditAssignment(id: string) {
+    if (!editTitle) return;
+    startTransition(async () => {
+      const supabase = getBrowserSupabase();
+      const { error } = await supabase
+        .from("assignments")
+        .update({
+          title: editTitle,
+          external_url: editLink || null,
+          instructions: editNotes || null,
+          due_date: editDue || null,
+        })
+        .eq("id", id);
+      if (!error) {
+        setEditingAsgId(null);
+        router.refresh();
+      }
     });
   }
 
@@ -362,45 +397,106 @@ export function CourseDetailClient({
           </p>
         ) : (
           <ul className="space-y-2">
-            {assignments.map((a) => (
-              <li
-                key={a.id}
-                className="rounded-xl border border-white/10 bg-white/[0.03] p-4"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-foreground">{a.title}</p>
-                    {a.externalUrl && (
-                      <a
-                        href={a.externalUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-brand/15 px-2.5 py-0.5 text-[11px] text-brand transition hover:bg-brand/25"
-                      >
-                        <ExternalLink size={10} />
-                        {a.externalUrl.replace(/^https?:\/\//, "").slice(0, 40)}
-                        {a.externalUrl.length > 47 ? "…" : ""}
-                      </a>
-                    )}
-                    {a.instructions && <p className="mt-1.5 text-xs text-muted text-pretty">{a.instructions}</p>}
-                    {a.dueDate && (
-                      <p className="mt-1 text-[11px] text-muted/70">
-                        ⏰ {fmtDate(a.dueDate, locale)}
-                      </p>
-                    )}
+            {assignments.map((a) =>
+              editingAsgId === a.id ? (
+                <li key={a.id} className="rounded-xl border border-brand/30 bg-brand/[0.04] p-4">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_200px]">
+                    <Field label={dict.assignmentTitle}>
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="h-10 w-full rounded-xl border border-white/10 bg-background/70 px-3 text-sm text-foreground focus:border-brand/60 focus:outline-none"
+                      />
+                    </Field>
+                    <Field label={dict.assignmentDueDate}>
+                      <DatePicker locale={locale} value={editDue} onChange={setEditDue} />
+                    </Field>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => deleteAssignment(a.id)}
-                    disabled={pending}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-muted hover:border-red-400/40 hover:bg-red-400/10 hover:text-red-200 disabled:opacity-50"
-                  >
-                    <Trash2 size={11} />
-                    {dict.detailDeleteAssignment}
-                  </button>
-                </div>
-              </li>
-            ))}
+                  <Field label={dict.assignmentLink} className="mt-3">
+                    <input
+                      type="url"
+                      value={editLink}
+                      onChange={(e) => setEditLink(e.target.value)}
+                      placeholder={dict.assignmentLinkPlaceholder}
+                      className="h-10 w-full rounded-xl border border-white/10 bg-background/70 px-3 text-sm text-foreground focus:border-brand/60 focus:outline-none"
+                    />
+                  </Field>
+                  <Field label={dict.assignmentNotes} className="mt-3">
+                    <textarea
+                      rows={3}
+                      value={editNotes}
+                      onChange={(e) => setEditNotes(e.target.value)}
+                      className="w-full rounded-xl border border-white/10 bg-background/70 px-3 py-2 text-sm text-foreground focus:border-brand/60 focus:outline-none"
+                    />
+                  </Field>
+                  <div className="mt-3 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingAsgId(null)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-muted hover:text-foreground"
+                    >
+                      <X size={11} />
+                      {dict.cancelEdit}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => saveEditAssignment(a.id)}
+                      disabled={pending || !editTitle}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3.5 py-1 text-[11px] font-medium text-[#031019] hover:shadow-[0_10px_30px_-10px_rgba(79,195,220,0.6)] disabled:opacity-50"
+                    >
+                      <Check size={11} />
+                      {dict.saveChanges}
+                    </button>
+                  </div>
+                </li>
+              ) : (
+                <li key={a.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-foreground">{a.title}</p>
+                      {a.externalUrl && (
+                        <a
+                          href={a.externalUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-brand/15 px-2.5 py-0.5 text-[11px] text-brand transition hover:bg-brand/25"
+                        >
+                          <ExternalLink size={10} />
+                          {a.externalUrl.replace(/^https?:\/\//, "").slice(0, 40)}
+                          {a.externalUrl.length > 47 ? "…" : ""}
+                        </a>
+                      )}
+                      {a.instructions && <p className="mt-1.5 text-xs text-muted text-pretty">{a.instructions}</p>}
+                      {a.dueDate && (
+                        <p className="mt-1 text-[11px] text-muted/70">
+                          ⏰ {fmtDate(a.dueDate, locale)}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => startEditAssignment(a)}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-muted hover:border-brand/40 hover:bg-brand/10 hover:text-foreground"
+                      >
+                        <Pencil size={11} />
+                        {dict.editAssignment}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteAssignment(a.id)}
+                        disabled={pending}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-muted hover:border-red-400/40 hover:bg-red-400/10 hover:text-red-200 disabled:opacity-50"
+                      >
+                        <Trash2 size={11} />
+                        {dict.detailDeleteAssignment}
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ),
+            )}
           </ul>
         )}
       </section>

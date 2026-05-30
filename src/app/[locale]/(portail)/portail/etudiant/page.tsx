@@ -153,9 +153,45 @@ export default async function StudentDashboard({
     }
   }
 
+  // Completion for THIS student
+  const [{ data: courseCompletions }, { data: asgCompletions }] = await Promise.all([
+    supabase
+      .from("student_course_completion")
+      .select("course_id")
+      .eq("student_id", user.id),
+    supabase
+      .from("student_assignment_completion")
+      .select("assignment_id")
+      .eq("student_id", user.id),
+  ]);
+  const completedCourseIds = new Set((courseCompletions ?? []).map((c) => c.course_id as string));
+  const completedAsgIds = new Set((asgCompletions ?? []).map((a) => a.assignment_id as string));
+  const totalCount = courses.length + assignments.length;
+  const doneCount = completedCourseIds.size + completedAsgIds.size;
+  const completionPct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+
   return (
     <>
       <PageHeader title={dict.portail.student.welcome} />
+
+      {totalCount > 0 && (
+        <section className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-display text-base text-foreground">
+              {dict.portail.contact.completionTitle}
+            </h2>
+            <span className="text-xs text-muted">
+              {doneCount} / {totalCount} · {completionPct}%
+            </span>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/5">
+            <div
+              className="h-full rounded-full bg-brand transition-all"
+              style={{ width: `${completionPct}%` }}
+            />
+          </div>
+        </section>
+      )}
 
       <section className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-3">
         <StatCard label={dict.portail.sidebar.links.courses} value={courses.length} icon={<BookOpen size={18} />} />

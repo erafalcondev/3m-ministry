@@ -6,6 +6,7 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { requireRole, ADMIN_ONLY } from "@/lib/portail/access";
 import { CourseDetailClient } from "./CourseDetailClient";
+import { CourseEditClient } from "./CourseEditClient";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "border-white/10 bg-white/5 text-muted",
@@ -54,7 +55,7 @@ export default async function CourseDetailPage({
     supabase.from("course_notes").select("id,author_id,body,created_at").eq("course_id", id).order("created_at", { ascending: false }),
     supabase.from("course_students").select("student_id").eq("course_id", id),
     supabase.from("course_cohorts").select("cohort_id").eq("course_id", id),
-    supabase.from("profiles").select("id,email,full_name").eq("role", "student").eq("status", "approved").order("full_name"),
+    supabase.from("profiles").select("id,email,full_name,role").eq("status", "approved").order("full_name"),
     supabase.from("cohorts").select("id,name").order("name"),
   ]);
 
@@ -107,11 +108,32 @@ export default async function CourseDetailPage({
     .map((s) => ({
       id: s.id as string,
       label: (s.full_name as string | null) || (s.email as string),
-      secondary: s.email as string,
+      secondary: `${s.email as string} · ${s.role as string}`,
     }));
   const eligibleCohorts = (allCohorts ?? [])
     .filter((c) => !memberCohortIds.has(c.id as string))
     .map((c) => ({ id: c.id as string, label: c.name as string }));
+
+  // Programs + instructors for the inline course-edit form
+  const { data: programOptionsRaw } = await supabase
+    .from("programs")
+    .select("id,code,name_fr,name_en")
+    .eq("active", true)
+    .order("sort_order");
+  const programOptions = (programOptionsRaw ?? []).map((p) => ({
+    id: p.id as string,
+    label: `${p.code as string} · ${(locale === "fr" ? p.name_fr : p.name_en) as string}`,
+  }));
+  const { data: instructorOptionsRaw } = await supabase
+    .from("profiles")
+    .select("id,email,full_name,role")
+    .in("role", ["coach", "coordinator", "director", "admin"])
+    .eq("status", "approved")
+    .order("full_name");
+  const instructorOptions = (instructorOptionsRaw ?? []).map((p) => ({
+    id: p.id as string,
+    label: `${(p.full_name as string | null) || (p.email as string)} · ${p.role as string}`,
+  }));
 
   // Notes authors
   const authorIds = Array.from(new Set((notes ?? []).map((n) => n.author_id as string | null).filter(Boolean) as string[]));
@@ -192,6 +214,22 @@ export default async function CourseDetailPage({
             {dict.portail.courses[`status${(course.status as string).charAt(0).toUpperCase() + (course.status as string).slice(1)}` as keyof typeof dict.portail.courses] as string}
           </span>
         </div>
+
+        <CourseEditClient
+          course={{
+            id: course.id as string,
+            title: course.title as string,
+            description: course.description as string | null,
+            externalUrl: course.external_url as string | null,
+            programId: course.program_id as string | null,
+            instructorId: course.instructor_id as string | null,
+            status: course.status as "draft" | "published" | "archived",
+          }}
+          dict={dict.portail.courses}
+          programs={programOptions}
+          instructors={instructorOptions}
+          locale={locale}
+        />
       </header>
 
       <CourseDetailClient
