@@ -40,12 +40,13 @@ import type { UserRole } from "@/lib/supabase/types";
 
 type PortailDict = Dictionary["portail"];
 
-type LinkDef = { href: string; label: string; icon: React.ReactNode };
+type LinkDef = { href: string; label: string; icon: React.ReactNode; badge?: number };
 
 function getNavSections(
   locale: Locale,
   role: UserRole,
   dict: PortailDict,
+  openTicketsCount = 0,
 ): { title: string; links: LinkDef[] }[] {
   const base = `/${locale}/portail`;
   if (role === "admin") {
@@ -62,7 +63,12 @@ function getNavSections(
           { href: `${base}/admin/resources`, label: dict.sidebar.links.dam, icon: <Library size={16} /> },
           { href: `${base}/admin/events`, label: dict.sidebar.links.events, icon: <CalendarIcon size={16} /> },
           { href: `${base}/admin/timeline`, label: dict.sidebar.links.timeline, icon: <CalendarRange size={16} /> },
-          { href: `${base}/admin/tickets`, label: dict.sidebar.links.tickets, icon: <MessageCircle size={16} /> },
+          {
+            href: `${base}/admin/tickets`,
+            label: dict.sidebar.links.tickets,
+            icon: <MessageCircle size={16} />,
+            badge: openTicketsCount,
+          },
           { href: `${base}/admin/analytics`, label: dict.sidebar.links.analytics, icon: <BarChart3 size={16} /> },
           { href: `${base}/admin/exports`, label: dict.sidebar.links.exports, icon: <FileDown size={16} /> },
           { href: `${base}/admin/audit`, label: dict.sidebar.links.audit, icon: <Activity size={16} /> },
@@ -79,6 +85,7 @@ function getNavSections(
           { href: `${base}/director/pulse`, label: dict.sidebar.links.pulse, icon: <Heart size={16} /> },
           { href: `${base}/admin/cohorts`, label: dict.sidebar.links.cohorts, icon: <Layers size={16} /> },
           { href: `${base}/admin/timeline`, label: dict.sidebar.links.timeline, icon: <CalendarRange size={16} /> },
+          { href: `${base}/etudiant/questions`, label: dict.sidebar.links.tickets, icon: <MessageCircle size={16} /> },
           { href: `${base}/admin/exports`, label: dict.sidebar.links.exports, icon: <FileDown size={16} /> },
         ],
       },
@@ -93,6 +100,7 @@ function getNavSections(
           { href: `${base}/admin/cohorts`, label: dict.sidebar.links.cohorts, icon: <Layers size={16} /> },
           { href: `${base}/admin/timeline`, label: dict.sidebar.links.timeline, icon: <CalendarRange size={16} /> },
           { href: `${base}/admin/users`, label: dict.sidebar.links.users, icon: <Users size={16} /> },
+          { href: `${base}/etudiant/questions`, label: dict.sidebar.links.tickets, icon: <MessageCircle size={16} /> },
           { href: `${base}/admin/exports`, label: dict.sidebar.links.exports, icon: <FileDown size={16} /> },
         ],
       },
@@ -106,6 +114,7 @@ function getNavSections(
           { href: `${base}/coach`, label: dict.sidebar.links.dashboard, icon: <LayoutDashboard size={16} /> },
           { href: `${base}/coach/students`, label: dict.sidebar.links.students, icon: <Users size={16} /> },
           { href: `${base}/coach/log`, label: dict.sidebar.links.log, icon: <ClipboardList size={16} /> },
+          { href: `${base}/etudiant/questions`, label: dict.sidebar.links.tickets, icon: <MessageCircle size={16} /> },
         ],
       },
     ];
@@ -117,7 +126,8 @@ function getNavSections(
         { href: `${base}/etudiant`, label: dict.sidebar.links.dashboard, icon: <LayoutDashboard size={16} /> },
         { href: `${base}/etudiant/cours`, label: dict.sidebar.links.courses, icon: <BookOpen size={16} /> },
         { href: `${base}/etudiant/devoirs`, label: dict.sidebar.links.assignments, icon: <ClipboardList size={16} /> },
-        { href: `${base}/etudiant/ressources`, label: dict.sidebar.links.resources, icon: <FolderOpen size={16} /> },
+        { href: `${base}/etudiant/ressources`, label: dict.sidebar.links.dam, icon: <Library size={16} /> },
+        { href: `${base}/etudiant/cohorte`, label: dict.sidebar.links.cohorts, icon: <Layers size={16} /> },
         { href: `${base}/etudiant/questions`, label: dict.sidebar.links.tickets, icon: <MessageCircle size={16} /> },
       ],
     },
@@ -143,17 +153,19 @@ export function PortailShell({
   locale,
   dict,
   user,
+  openTicketsCount = 0,
   children,
 }: {
   locale: Locale;
   dict: PortailDict;
   user: { id: string; email: string; fullName: string | null; role: UserRole };
+  openTicketsCount?: number;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const sections = getNavSections(locale, user.role, dict);
+  const sections = getNavSections(locale, user.role, dict, openTicketsCount);
 
   const otherLocale: Locale = locale === "fr" ? "en" : "fr";
   const otherLocalePath = useMemo(() => {
@@ -234,7 +246,12 @@ export function PortailShell({
                           <span className={cn("transition", active ? "text-brand" : "text-muted/80 group-hover:text-foreground")}>
                             {link.icon}
                           </span>
-                          <span>{link.label}</span>
+                          <span className="flex-1">{link.label}</span>
+                          {link.badge && link.badge > 0 ? (
+                            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-semibold text-white">
+                              {link.badge > 99 ? "99+" : link.badge}
+                            </span>
+                          ) : null}
                         </Link>
                       </li>
                     );
@@ -300,7 +317,12 @@ export function PortailShell({
                                 )}
                               >
                                 {link.icon}
-                                <span>{link.label}</span>
+                                <span className="flex-1">{link.label}</span>
+                                {link.badge && link.badge > 0 ? (
+                                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-semibold text-white">
+                                    {link.badge > 99 ? "99+" : link.badge}
+                                  </span>
+                                ) : null}
                               </Link>
                             </li>
                           );

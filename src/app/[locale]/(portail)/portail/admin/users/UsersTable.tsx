@@ -4,7 +4,8 @@ import { useState, Fragment, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Check, X, AlertCircle, LogIn, Search } from "lucide-react";
+import { Check, X, AlertCircle, LogIn, Search, Eye, Plus } from "lucide-react";
+import { NewUserDialog } from "./NewUserDialog";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/fr";
@@ -65,6 +66,7 @@ export function UsersTable({
   const [filterRole, setFilterRole] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("");
   const [filterProgram, setFilterProgram] = useState<string>("");
+  const [newUserOpen, setNewUserOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -183,7 +185,25 @@ export function UsersTable({
           ))}
         </select>
         <span className="ml-auto text-xs text-muted">{filtered.length}</span>
+        {canEditRoles && (
+          <button
+            type="button"
+            onClick={() => setNewUserOpen(true)}
+            className="inline-flex h-9 items-center gap-2 rounded-full bg-brand px-4 text-xs font-medium text-[#031019] transition hover:shadow-[0_10px_30px_-10px_rgba(79,195,220,0.6)]"
+          >
+            <Plus size={13} />
+            {dict.newUserCta}
+          </button>
+        )}
       </div>
+
+      <NewUserDialog
+        open={newUserOpen}
+        onClose={() => setNewUserOpen(false)}
+        locale={locale}
+        dict={dict}
+        roleLabels={roleLabels}
+      />
 
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-6 py-16 text-center text-sm text-muted">
@@ -280,6 +300,17 @@ export function UsersTable({
                           </option>
                         ))}
                       </select>
+                      {canImpersonate && r.status === "approved" && r.role === "student" && (
+                        <Link
+                          href={`/${locale}/portail/admin/contacts/${r.id}/preview`}
+                          aria-label={dict.viewAsCta}
+                          title={dict.viewAsCta}
+                          className="inline-flex h-7 items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 text-[10px] text-muted transition hover:border-brand/40 hover:bg-brand/10 hover:text-brand"
+                        >
+                          <Eye size={10} />
+                          {dict.viewAsCta}
+                        </Link>
+                      )}
                       {canImpersonate && r.status === "approved" && (
                         <button
                           type="button"

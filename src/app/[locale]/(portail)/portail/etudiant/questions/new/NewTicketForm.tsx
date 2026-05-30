@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Send } from "lucide-react";
@@ -10,20 +10,36 @@ import type { Dictionary } from "@/i18n/dictionaries/fr";
 
 type TicketsDict = Dictionary["portail"]["tickets"];
 
+type Category = "personal" | "technical" | "coaching" | "assignment" | "course" | "other";
+
+const CATEGORIES: Category[] = ["personal", "technical", "coaching", "assignment", "course", "other"];
+
 export function NewTicketForm({
   locale,
   dict,
   userId,
+  courses,
+  assignments,
 }: {
   locale: Locale;
   dict: TicketsDict;
   userId: string;
+  courses: { id: string; label: string }[];
+  assignments: { id: string; label: string; courseId: string }[];
 }) {
   const router = useRouter();
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [category, setCategory] = useState<Category>("personal");
+  const [courseId, setCourseId] = useState<string>("");
+  const [assignmentId, setAssignmentId] = useState<string>("");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  const filteredAssignments = useMemo(
+    () => (courseId ? assignments.filter((a) => a.courseId === courseId) : assignments),
+    [assignments, courseId],
+  );
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,7 +49,14 @@ export function NewTicketForm({
       const supabase = getBrowserSupabase();
       const { data: ticket, error: tErr } = await supabase
         .from("tickets")
-        .insert({ student_id: userId, subject, status: "open" })
+        .insert({
+          student_id: userId,
+          subject,
+          status: "open",
+          category,
+          course_id: courseId || null,
+          assignment_id: assignmentId || null,
+        })
         .select("id")
         .single();
       if (tErr || !ticket) {
@@ -68,6 +91,63 @@ export function NewTicketForm({
           className="h-11 w-full rounded-xl border border-white/10 bg-background/70 px-3 text-sm text-foreground focus:border-brand/60 focus:outline-none"
         />
       </Field>
+
+      <Field label={dict.categoryLabel}>
+        <div className="flex flex-wrap gap-2">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setCategory(c)}
+              className={`rounded-full border px-3.5 py-1.5 text-xs transition ${
+                category === c
+                  ? "border-brand/40 bg-brand/15 text-brand"
+                  : "border-white/10 bg-white/5 text-muted hover:border-brand/30 hover:text-foreground"
+              }`}
+            >
+              {dict.categories[c]}
+            </button>
+          ))}
+        </div>
+      </Field>
+
+      {courses.length > 0 && (
+        <Field label={dict.courseLabel}>
+          <select
+            value={courseId}
+            onChange={(e) => {
+              setCourseId(e.target.value);
+              setAssignmentId("");
+            }}
+            className="h-11 w-full rounded-xl border border-white/10 bg-background/70 px-3 text-sm text-foreground focus:border-brand/60 focus:outline-none"
+          >
+            <option value="">{dict.none}</option>
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
+
+      {filteredAssignments.length > 0 && (
+        <Field label={dict.assignmentLabel}>
+          <select
+            value={assignmentId}
+            onChange={(e) => setAssignmentId(e.target.value)}
+            className="h-11 w-full rounded-xl border border-white/10 bg-background/70 px-3 text-sm text-foreground focus:border-brand/60 focus:outline-none"
+          >
+            <option value="">{dict.none}</option>
+            {filteredAssignments.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
+
       <Field label={dict.messageLabel}>
         <textarea
           rows={5}

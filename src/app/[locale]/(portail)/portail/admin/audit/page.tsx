@@ -8,11 +8,13 @@ const ACTION_ICONS: Record<string, string> = {
   "user.approve": "✓",
   "user.refuse": "✗",
   "user.role_change": "↻",
+  "user.create_manual": "✨",
   "coach.assign": "↔",
   "coach.unassign": "↮",
   "cohort.add_member": "+",
   "cohort.remove_member": "−",
   "admin.impersonate": "👁",
+  "ticket.create": "💬",
 };
 
 type AuditRow = {
@@ -172,6 +174,24 @@ export default async function AuditPage({
             <strong className="text-foreground">{actor}</strong> {m.cohortRemoveMember}{" "}
             <strong className="text-foreground">{cohort}</strong>:{" "}
             <strong className="text-foreground">{student}</strong>
+          </>
+        );
+      }
+      case "ticket.create": {
+        const subject = (meta.subject as string) ?? "—";
+        return (
+          <>
+            <strong className="text-foreground">{actor}</strong> {m.ticketCreate}:{" "}
+            <span className="text-foreground/80">« {subject} »</span>
+          </>
+        );
+      }
+      case "user.create_manual": {
+        return (
+          <>
+            <strong className="text-foreground">{actor}</strong> {m.userCreateManual}{" "}
+            <strong className="text-foreground">{(meta.email as string) ?? targetName ?? "—"}</strong>
+            {meta.role ? ` (${meta.role})` : ""}
           </>
         );
       }

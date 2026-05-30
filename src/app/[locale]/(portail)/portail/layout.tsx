@@ -23,7 +23,7 @@ export default async function PortailLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id,email,full_name,role,status")
+    .select("id,email,full_name,role,status,must_change_password")
     .eq("id", user.id)
     .single();
 
@@ -33,6 +33,19 @@ export default async function PortailLayout({
   if (status !== "approved") {
     await supabase.auth.signOut();
     redirect(`/${locale}/login`);
+  }
+  if (profile.must_change_password) {
+    redirect(`/${locale}/change-password`);
+  }
+
+  // Notification badge on admin Questions: count of non-archived tickets.
+  let openTicketsCount = 0;
+  if (profile.role === "admin") {
+    const { count } = await supabase
+      .from("tickets")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["open", "in_progress"]);
+    openTicketsCount = count ?? 0;
   }
 
   return (
@@ -45,6 +58,7 @@ export default async function PortailLayout({
         fullName: profile.full_name as string | null,
         role: profile.role as UserRole,
       }}
+      openTicketsCount={openTicketsCount}
     >
       {children}
     </PortailShell>
