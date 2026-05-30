@@ -1,29 +1,7 @@
-import { redirect } from "next/navigation";
-import { getServerSupabase } from "@/lib/supabase/server";
+// Admin route group is a passthrough — gating happens at page level via
+// `requireRole()` so that some sub-routes (cohorts, timeline, exports) can be
+// reached by staff (director/coordinator) while admin-only routes stay locked.
 
-export default async function AdminLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale } = await params;
-  const supabase = await getServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect(`/${locale}/login`);
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role,status")
-    .eq("id", user.id)
-    .single();
-
-  if (profile?.role !== "admin" || profile?.status !== "approved") {
-    redirect(`/${locale}/portail/${profile?.role === "coach" ? "coach" : "etudiant"}`);
-  }
-
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }

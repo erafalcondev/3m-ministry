@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { portailLanding, type UserRole } from "@/lib/supabase/types";
 import { PageHeader } from "@/components/portail/PageHeader";
 import { BookOpen, ClipboardList, FolderOpen } from "lucide-react";
 
@@ -23,8 +24,9 @@ export default async function StudentDashboard({
     .select("role")
     .eq("id", user.id)
     .single();
-  if (profile?.role === "admin") redirect(`/${locale}/portail/admin`);
-  if (profile?.role === "coach") redirect(`/${locale}/portail/coach`);
+  if (profile?.role && profile.role !== "student") {
+    redirect(portailLanding(locale, profile.role as UserRole));
+  }
 
   const cards = [
     {

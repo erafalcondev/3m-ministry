@@ -65,9 +65,13 @@ export function Navbar({
   const portailHref =
     role === "admin"
       ? `/${locale}/portail/admin`
-      : role === "coach"
-        ? `/${locale}/portail/coach`
-        : `/${locale}/portail/etudiant`;
+      : role === "director"
+        ? `/${locale}/portail/director`
+        : role === "coordinator"
+          ? `/${locale}/portail/coordinator`
+          : role === "coach"
+            ? `/${locale}/portail/coach`
+            : `/${locale}/portail/etudiant`;
 
   return (
     <header

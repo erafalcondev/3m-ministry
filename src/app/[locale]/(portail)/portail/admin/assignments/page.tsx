@@ -1,6 +1,7 @@
 import { type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { requireRole, ADMIN_ONLY } from "@/lib/portail/access";
 import { PageHeader } from "@/components/portail/PageHeader";
 import { AssignmentsClient, type SimpleProfile } from "./AssignmentsClient";
 
@@ -10,6 +11,7 @@ export default async function AssignmentsPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  await requireRole(locale, ADMIN_ONLY);
   const dict = getDictionary(locale as Locale);
   const supabase = await getServerSupabase();
 
@@ -28,7 +30,7 @@ export default async function AssignmentsPage({
       .order("full_name"),
     supabase
       .from("coach_student_links")
-      .select("coach_id,student_id,assigned_at"),
+      .select("coach_id,student_id,relationship_type,assigned_at"),
   ]);
 
   const coaches: SimpleProfile[] = (coachesRes.data ?? []).map((c) => ({
@@ -42,6 +44,7 @@ export default async function AssignmentsPage({
   const links = (linksRes.data ?? []).map((l) => ({
     coachId: l.coach_id as string,
     studentId: l.student_id as string,
+    relationshipType: l.relationship_type as "academic" | "ministry_mentor" | "team_leader",
     assignedAt: l.assigned_at as string,
   }));
 
@@ -55,6 +58,7 @@ export default async function AssignmentsPage({
         <AssignmentsClient
           locale={locale as Locale}
           dict={dict.portail.admin}
+          relationshipLabels={dict.portail.common.relationship}
           coaches={coaches}
           students={students}
           links={links}

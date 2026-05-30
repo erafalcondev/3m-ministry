@@ -1,9 +1,23 @@
 import Link from "next/link";
-import { ClipboardCheck, UserCog, Link2, Activity, ArrowRight } from "lucide-react";
+import {
+  ClipboardCheck,
+  UserCog,
+  Link2,
+  Activity,
+  ArrowRight,
+  Layers,
+  CalendarRange,
+  GraduationCap,
+  FileDown,
+} from "lucide-react";
 import { type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { requireRole, ADMIN_ONLY } from "@/lib/portail/access";
 import { PageHeader } from "@/components/portail/PageHeader";
+import { DashboardStats } from "@/components/portail/DashboardStats";
+import { HighlightsCard } from "@/components/portail/HighlightsCard";
+import { computeHighlights } from "@/lib/portail/highlights";
 
 export default async function AdminDashboard({
   params,
@@ -11,22 +25,44 @@ export default async function AdminDashboard({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  await requireRole(locale, ADMIN_ONLY);
   const dict = getDictionary(locale as Locale);
   const supabase = await getServerSupabase();
 
-  const [{ count: pendingCount }, { count: totalUsers }, { count: coaches }, { count: students }] =
-    await Promise.all([
-      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("status", "pending"),
-      supabase.from("profiles").select("id", { count: "exact", head: true }),
-      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "coach").eq("status", "approved"),
-      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "student").eq("status", "approved"),
-    ]);
+  const [
+    { count: pendingCount },
+    { count: totalUsers },
+    { count: coaches },
+    { count: students },
+    { count: coordinators },
+    { count: directors },
+    { count: cohortsActive },
+    { count: cohortsPlanned },
+    { count: programs },
+  ] = await Promise.all([
+    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("status", "approved"),
+    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "coach").eq("status", "approved"),
+    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "student").eq("status", "approved"),
+    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "coordinator").eq("status", "approved"),
+    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "director").eq("status", "approved"),
+    supabase.from("cohorts").select("id", { count: "exact", head: true }).eq("status", "active"),
+    supabase.from("cohorts").select("id", { count: "exact", head: true }).eq("status", "planned"),
+    supabase.from("programs").select("id", { count: "exact", head: true }).eq("active", true),
+  ]);
+
+  const highlights = await computeHighlights(supabase, dict.portail.highlights);
 
   const stats = [
     { label: dict.portail.sidebar.links.approvals, value: pendingCount ?? 0, accent: (pendingCount ?? 0) > 0 },
     { label: dict.portail.sidebar.links.users, value: totalUsers ?? 0 },
-    { label: dict.portail.common.roles.coach + "s", value: coaches ?? 0 },
     { label: dict.portail.common.roles.student + "s", value: students ?? 0 },
+    { label: dict.portail.common.roles.coach + "s", value: coaches ?? 0 },
+    { label: dict.portail.common.roles.coordinator + "s", value: coordinators ?? 0 },
+    { label: dict.portail.common.roles.director + "s", value: directors ?? 0 },
+    { label: `${dict.portail.sidebar.links.cohorts} (act.)`, value: cohortsActive ?? 0 },
+    { label: `${dict.portail.sidebar.links.cohorts} (à venir)`, value: cohortsPlanned ?? 0 },
+    { label: dict.portail.sidebar.links.programs, value: programs ?? 0 },
   ];
 
   const quickLinks = [
@@ -41,9 +77,29 @@ export default async function AdminDashboard({
       icon: <UserCog size={18} />,
     },
     {
+      href: `/${locale}/portail/admin/programs`,
+      title: dict.portail.sidebar.links.programs,
+      icon: <GraduationCap size={18} />,
+    },
+    {
+      href: `/${locale}/portail/admin/cohorts`,
+      title: dict.portail.sidebar.links.cohorts,
+      icon: <Layers size={18} />,
+    },
+    {
+      href: `/${locale}/portail/admin/timeline`,
+      title: dict.portail.sidebar.links.timeline,
+      icon: <CalendarRange size={18} />,
+    },
+    {
       href: `/${locale}/portail/admin/assignments`,
       title: dict.portail.sidebar.links.assignments_admin,
       icon: <Link2 size={18} />,
+    },
+    {
+      href: `/${locale}/portail/admin/exports`,
+      title: dict.portail.sidebar.links.exports,
+      icon: <FileDown size={18} />,
     },
     {
       href: `/${locale}/portail/admin/audit`,
@@ -56,37 +112,42 @@ export default async function AdminDashboard({
     <>
       <PageHeader title={dict.portail.admin.welcome} />
 
-      <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"
-          >
-            <p className="text-xs uppercase tracking-[0.18em] text-muted">{s.label}</p>
-            <p className={`mt-2 font-display text-3xl ${s.accent ? "text-brand" : "text-foreground"}`}>
-              {s.value}
-            </p>
-          </div>
-        ))}
-      </div>
+      {/* Highlights */}
+      <section className="mt-8">
+        <HighlightsCard
+          title={dict.portail.highlights.title}
+          empty={dict.portail.highlights.empty}
+          highlights={highlights}
+        />
+      </section>
 
-      <div className="mt-10 grid grid-cols-1 gap-3 md:grid-cols-2">
-        {quickLinks.map((q) => (
-          <Link
-            key={q.href}
-            href={q.href}
-            className="group flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-brand/40 hover:bg-brand/[0.06]"
-          >
-            <span className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/15 text-brand">
-                {q.icon}
+      {/* Stats grid */}
+      <section className="mt-10">
+        <h2 className="mb-3 font-display text-lg text-foreground">Statistiques</h2>
+        <DashboardStats stats={stats} />
+      </section>
+
+      {/* Quick links */}
+      <section className="mt-10">
+        <h2 className="mb-3 font-display text-lg text-foreground">Raccourcis</h2>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {quickLinks.map((q) => (
+            <Link
+              key={q.href}
+              href={q.href}
+              className="group flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-brand/40 hover:bg-brand/[0.06]"
+            >
+              <span className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/15 text-brand">
+                  {q.icon}
+                </span>
+                <span className="text-sm text-foreground">{q.title}</span>
               </span>
-              <span className="text-sm text-foreground">{q.title}</span>
-            </span>
-            <ArrowRight size={16} className="text-muted transition group-hover:text-brand" />
-          </Link>
-        ))}
-      </div>
+              <ArrowRight size={16} className="text-muted transition group-hover:text-brand" />
+            </Link>
+          ))}
+        </div>
+      </section>
     </>
   );
 }

@@ -10,13 +10,16 @@ import type { Dictionary } from "@/i18n/dictionaries/fr";
 type AdminDict = Dictionary["portail"]["admin"];
 type RoleLabels = Dictionary["portail"]["common"]["roles"];
 
+type Role = "student" | "coach" | "coordinator" | "director" | "admin";
+
 type Row = {
   id: string;
   email: string;
   fullName: string | null;
-  role: "student" | "coach" | "admin";
+  role: Role;
   status: "pending" | "approved" | "refused";
   createdAt: string;
+  cohorts: string[];
 };
 
 function fmtDate(iso: string, locale: Locale) {
@@ -33,21 +36,25 @@ const statusColor: Record<Row["status"], string> = {
   refused: "border-red-400/30 bg-red-400/10 text-red-200",
 };
 
+const ROLE_OPTIONS: Role[] = ["student", "coach", "coordinator", "director", "admin"];
+
 export function UsersTable({
   locale,
   dict,
   roleLabels,
+  canEditRoles,
   rows,
 }: {
   locale: Locale;
   dict: AdminDict;
   roleLabels: RoleLabels;
+  canEditRoles: boolean;
   rows: Row[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  function setRole(id: string, role: Row["role"]) {
+  function setRole(id: string, role: Role) {
     startTransition(async () => {
       const supabase = getBrowserSupabase();
       const { error } = await supabase.rpc("set_user_role", { target: id, new_role: role });
@@ -71,12 +78,13 @@ export function UsersTable({
       className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]"
     >
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-left text-sm">
+        <table className="w-full min-w-[820px] text-left text-sm">
           <thead>
             <tr className="border-b border-white/5 text-[10px] uppercase tracking-[0.18em] text-muted">
               <th className="px-5 py-3 font-medium">{dict.colName}</th>
               <th className="px-5 py-3 font-medium">{dict.colEmail}</th>
               <th className="px-5 py-3 font-medium">{dict.colStatus}</th>
+              <th className="px-5 py-3 font-medium">{dict.colCohort}</th>
               <th className="px-5 py-3 font-medium">{dict.colCreated}</th>
               <th className="px-5 py-3 font-medium">{dict.colRole}</th>
             </tr>
@@ -96,18 +104,27 @@ export function UsersTable({
                     {dict.status[r.status]}
                   </span>
                 </td>
+                <td className="px-5 py-4 text-muted">
+                  {r.cohorts.length === 0 ? "—" : r.cohorts.join(", ")}
+                </td>
                 <td className="px-5 py-4 text-muted">{fmtDate(r.createdAt, locale)}</td>
                 <td className="px-5 py-4">
-                  <select
-                    value={r.role}
-                    disabled={pending || r.status !== "approved"}
-                    onChange={(e) => setRole(r.id, e.target.value as Row["role"])}
-                    className="rounded-full border border-white/10 bg-background/70 px-3 py-1 text-xs text-foreground focus:border-brand/60 focus:outline-none disabled:opacity-50"
-                  >
-                    <option value="student">{roleLabels.student}</option>
-                    <option value="coach">{roleLabels.coach}</option>
-                    <option value="admin">{roleLabels.admin}</option>
-                  </select>
+                  {canEditRoles ? (
+                    <select
+                      value={r.role}
+                      disabled={pending || r.status !== "approved"}
+                      onChange={(e) => setRole(r.id, e.target.value as Role)}
+                      className="rounded-full border border-white/10 bg-background/70 px-3 py-1 text-xs text-foreground focus:border-brand/60 focus:outline-none disabled:opacity-50"
+                    >
+                      {ROLE_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {roleLabels[opt]}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="text-xs text-muted">{roleLabels[r.role]}</span>
+                  )}
                 </td>
               </tr>
             ))}

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import { getBrowserSupabase } from "@/lib/supabase/client";
+import { portailLanding, type UserRole } from "@/lib/supabase/types";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/fr";
 
@@ -65,14 +66,8 @@ export function LoginForm({
         return;
       }
 
-      const dest =
-        from ||
-        (profile.role === "admin"
-          ? `${locale}/portail/admin`
-          : profile.role === "coach"
-            ? `${locale}/portail/coach`
-            : `${locale}/portail/etudiant`);
-      router.replace(`/${dest}`);
+      const dest = from ? `/${from}` : portailLanding(locale, profile.role as UserRole);
+      router.replace(dest);
       router.refresh();
     });
   }

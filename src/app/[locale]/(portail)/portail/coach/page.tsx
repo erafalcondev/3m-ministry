@@ -1,6 +1,7 @@
 import { type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { portailLanding, type UserRole } from "@/lib/supabase/types";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/portail/PageHeader";
 import { Users, ClipboardList } from "lucide-react";
@@ -23,8 +24,9 @@ export default async function CoachDashboard({
     .select("role")
     .eq("id", user.id)
     .single();
-  if (profile?.role === "admin") redirect(`/${locale}/portail/admin`);
-  if (profile?.role === "student") redirect(`/${locale}/portail/etudiant`);
+  if (profile?.role && profile.role !== "coach") {
+    redirect(portailLanding(locale, profile.role as UserRole));
+  }
 
   const { data: links } = await supabase
     .from("coach_student_links")

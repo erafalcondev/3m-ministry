@@ -19,6 +19,11 @@ import {
   LogOut,
   Menu,
   X,
+  GraduationCap,
+  Layers,
+  CalendarRange,
+  FileDown,
+  Heart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBrowserSupabase } from "@/lib/supabase/client";
@@ -44,8 +49,40 @@ function getNavSections(
           { href: `${base}/admin`, label: dict.sidebar.links.dashboard, icon: <LayoutDashboard size={16} /> },
           { href: `${base}/admin/approvals`, label: dict.sidebar.links.approvals, icon: <ClipboardCheck size={16} /> },
           { href: `${base}/admin/users`, label: dict.sidebar.links.users, icon: <UserCog size={16} /> },
+          { href: `${base}/admin/programs`, label: dict.sidebar.links.programs, icon: <GraduationCap size={16} /> },
+          { href: `${base}/admin/cohorts`, label: dict.sidebar.links.cohorts, icon: <Layers size={16} /> },
+          { href: `${base}/admin/timeline`, label: dict.sidebar.links.timeline, icon: <CalendarRange size={16} /> },
           { href: `${base}/admin/assignments`, label: dict.sidebar.links.assignments_admin, icon: <Link2 size={16} /> },
+          { href: `${base}/admin/exports`, label: dict.sidebar.links.exports, icon: <FileDown size={16} /> },
           { href: `${base}/admin/audit`, label: dict.sidebar.links.audit, icon: <Activity size={16} /> },
+        ],
+      },
+    ];
+  }
+  if (role === "director") {
+    return [
+      {
+        title: dict.sidebar.sections.director,
+        links: [
+          { href: `${base}/director`, label: dict.sidebar.links.dashboard, icon: <LayoutDashboard size={16} /> },
+          { href: `${base}/director/pulse`, label: dict.sidebar.links.pulse, icon: <Heart size={16} /> },
+          { href: `${base}/admin/cohorts`, label: dict.sidebar.links.cohorts, icon: <Layers size={16} /> },
+          { href: `${base}/admin/timeline`, label: dict.sidebar.links.timeline, icon: <CalendarRange size={16} /> },
+          { href: `${base}/admin/exports`, label: dict.sidebar.links.exports, icon: <FileDown size={16} /> },
+        ],
+      },
+    ];
+  }
+  if (role === "coordinator") {
+    return [
+      {
+        title: dict.sidebar.sections.coordinator,
+        links: [
+          { href: `${base}/coordinator`, label: dict.sidebar.links.dashboard, icon: <LayoutDashboard size={16} /> },
+          { href: `${base}/admin/cohorts`, label: dict.sidebar.links.cohorts, icon: <Layers size={16} /> },
+          { href: `${base}/admin/timeline`, label: dict.sidebar.links.timeline, icon: <CalendarRange size={16} /> },
+          { href: `${base}/admin/users`, label: dict.sidebar.links.users, icon: <Users size={16} /> },
+          { href: `${base}/admin/exports`, label: dict.sidebar.links.exports, icon: <FileDown size={16} /> },
         ],
       },
     ];
@@ -73,6 +110,14 @@ function getNavSections(
       ],
     },
   ];
+}
+
+function landingPath(locale: Locale, role: UserRole): string {
+  if (role === "admin") return `/${locale}/portail/admin`;
+  if (role === "director") return `/${locale}/portail/director`;
+  if (role === "coordinator") return `/${locale}/portail/coordinator`;
+  if (role === "coach") return `/${locale}/portail/coach`;
+  return `/${locale}/portail/etudiant`;
 }
 
 function initials(name: string | null, email: string): string {
@@ -111,7 +156,7 @@ export function PortailShell({
 
       {/* Mobile top bar */}
       <header className="relative z-20 flex items-center justify-between border-b border-border/60 bg-background/80 px-4 py-3 backdrop-blur-xl md:hidden">
-        <Link href={`/${locale}/portail/${user.role === "admin" ? "admin" : user.role === "coach" ? "coach" : "etudiant"}`} className="flex items-center gap-2">
+        <Link href={landingPath(locale, user.role)} className="flex items-center gap-2">
           <Image src="/3m-logo.png" alt="3M" width={26} height={26} className="object-contain" />
           <span className="font-display text-sm">{dict.sidebar.brand}</span>
         </Link>
@@ -129,7 +174,7 @@ export function PortailShell({
         {/* Sidebar (desktop) */}
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border/60 bg-background/60 px-5 py-7 backdrop-blur-xl md:flex">
           <Link
-            href={`/${locale}/portail/${user.role === "admin" ? "admin" : user.role === "coach" ? "coach" : "etudiant"}`}
+            href={landingPath(locale, user.role)}
             className="flex items-center gap-2.5"
           >
             <Image src="/3m-logo.png" alt="3M" width={30} height={30} className="object-contain" />
@@ -198,7 +243,7 @@ export function PortailShell({
                 onClick={(e) => e.stopPropagation()}
               >
                 <Link
-                  href={`/${locale}/portail/${user.role === "admin" ? "admin" : user.role === "coach" ? "coach" : "etudiant"}`}
+                  href={landingPath(locale, user.role)}
                   className="flex items-center gap-2.5"
                 >
                   <Image src="/3m-logo.png" alt="3M" width={30} height={30} className="object-contain" />

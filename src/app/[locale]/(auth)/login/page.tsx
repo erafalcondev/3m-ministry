@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { portailLanding, type UserRole } from "@/lib/supabase/types";
 import { LoginForm } from "./LoginForm";
 
 export default async function LoginPage({
@@ -27,13 +28,7 @@ export default async function LoginPage({
         .eq("id", user.id)
         .single();
       if (profile?.status === "approved") {
-        const dest =
-          profile.role === "admin"
-            ? `/${locale}/portail/admin`
-            : profile.role === "coach"
-              ? `/${locale}/portail/coach`
-              : `/${locale}/portail/etudiant`;
-        redirect(dest);
+        redirect(portailLanding(locale, profile.role as UserRole));
       }
     }
   }
