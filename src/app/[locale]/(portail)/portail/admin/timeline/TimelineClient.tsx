@@ -18,6 +18,14 @@ type Cohort = {
   endDate: string;
   status: "planned" | "active" | "completed" | "canceled";
 };
+export type TimelineEvent = {
+  id: string;
+  title: string;
+  startAt: string;
+  endAt: string | null;
+  color: string;
+  kind: string;
+};
 
 function startOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -43,12 +51,14 @@ export function TimelineClient({
   statusLabels,
   programs,
   cohorts,
+  events,
 }: {
   locale: Locale;
   dict: TimelineDict;
   statusLabels: StatusLabels;
   programs: Program[];
   cohorts: Cohort[];
+  events: TimelineEvent[];
 }) {
   const [programFilter, setProgramFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -223,6 +233,56 @@ export function TimelineClient({
                   </motion.li>
                 );
               })}
+
+              {/* Events row */}
+              {events.length > 0 && (
+                <li className="flex border-t border-white/10">
+                  <div className="w-60 shrink-0 px-4 py-3">
+                    <p className="text-sm text-foreground">Événements</p>
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-muted">
+                      {events.length} item(s)
+                    </p>
+                  </div>
+                  <div className="relative h-12" style={{ width: gridWidth }}>
+                    {months.map((m) => (
+                      <div
+                        key={m.getTime()}
+                        className="absolute top-0 h-full border-l border-white/[0.04]"
+                        style={{
+                          left:
+                            ((m.getTime() - range.start.getTime()) /
+                              (range.end.getTime() - range.start.getTime())) *
+                            gridWidth,
+                        }}
+                      />
+                    ))}
+                    {events.map((e) => {
+                      const start = new Date(e.startAt);
+                      const end = e.endAt ? new Date(e.endAt) : start;
+                      const span = range.end.getTime() - range.start.getTime();
+                      const left = ((start.getTime() - range.start.getTime()) / span) * gridWidth;
+                      const w = Math.max(
+                        8,
+                        ((end.getTime() - start.getTime()) / span) * gridWidth,
+                      );
+                      if (left < 0 || left > gridWidth) return null;
+                      return (
+                        <span
+                          key={e.id}
+                          title={`${e.title} — ${start.toLocaleDateString(locale === "fr" ? "fr-CA" : "en-CA")}`}
+                          className="absolute top-1/2 -translate-y-1/2 rounded-full"
+                          style={{
+                            left,
+                            width: w,
+                            height: 8,
+                            background: e.color,
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                </li>
+              )}
             </ul>
           </div>
         </div>

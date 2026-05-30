@@ -3,7 +3,7 @@
 import { useState, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Trash2, MapPin, ExternalLink, CalendarPlus, Filter } from "lucide-react";
+import { Plus, X, Trash2, MapPin, ExternalLink, CalendarPlus, Filter, ChevronLeft, ChevronRight, List, LayoutGrid } from "lucide-react";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/fr";
@@ -68,6 +68,8 @@ export function EventsClient({
   const [adding, setAdding] = useState(false);
   const [filterKind, setFilterKind] = useState<string>("");
   const [timeFilter, setTimeFilter] = useState<"upcoming" | "past" | "all">("upcoming");
+  const [view, setView] = useState<"list" | "month">("list");
+  const [monthCursor, setMonthCursor] = useState<Date>(new Date());
   const [pending, startTransition] = useTransition();
 
   const now = new Date();
@@ -121,6 +123,28 @@ export function EventsClient({
             </button>
           ))}
         </div>
+        <div className="inline-flex rounded-full border border-white/10 bg-background/40 p-0.5 text-[11px]">
+          <button
+            type="button"
+            onClick={() => setView("list")}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 transition ${
+              view === "list" ? "bg-brand text-[#031019] font-medium" : "text-muted hover:text-foreground"
+            }`}
+          >
+            <List size={11} />
+            {dict.viewList}
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("month")}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 transition ${
+              view === "month" ? "bg-brand text-[#031019] font-medium" : "text-muted hover:text-foreground"
+            }`}
+          >
+            <LayoutGrid size={11} />
+            {dict.viewMonth}
+          </button>
+        </div>
         {canWrite && (
           <button
             type="button"
@@ -148,7 +172,15 @@ export function EventsClient({
         )}
       </AnimatePresence>
 
-      {filtered.length === 0 ? (
+      {view === "month" ? (
+        <MonthGrid
+          locale={locale}
+          dict={dict}
+          cursor={monthCursor}
+          setCursor={setMonthCursor}
+          events={rows}
+        />
+      ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-6 py-16 text-center text-sm text-muted">
           {dict.empty}
         </div>
@@ -473,5 +505,134 @@ function Field({
       <span className="mb-1.5 block text-[10px] uppercase tracking-[0.18em] text-muted">{label}</span>
       {children}
     </label>
+  );
+}
+
+function MonthGrid({
+  locale,
+  dict,
+  cursor,
+  setCursor,
+  events,
+}: {
+  locale: Locale;
+  dict: EventsDict;
+  cursor: Date;
+  setCursor: (d: Date) => void;
+  events: EventRow[];
+}) {
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+  const first = new Date(year, month, 1);
+  // FR weeks start Monday, EN start Sunday
+  const firstWeekDay = (first.getDay() + (locale === "fr" ? 6 : 0)) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: (Date | null)[] = [];
+  for (let i = 0; i < firstWeekDay; i += 1) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d += 1) cells.push(new Date(year, month, d));
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const monthName = first.toLocaleDateString(locale === "fr" ? "fr-CA" : "en-CA", {
+    month: "long",
+    year: "numeric",
+  });
+
+  const weekdayLabels =
+    locale === "fr" ? ["L", "M", "M", "J", "V", "S", "D"] : ["S", "M", "T", "W", "T", "F", "S"];
+
+  function eventsOn(day: Date): EventRow[] {
+    const y = day.getFullYear();
+    const m = day.getMonth();
+    const d = day.getDate();
+    return events.filter((e) => {
+      const s = new Date(e.startAt);
+      return s.getFullYear() === y && s.getMonth() === m && s.getDate() === d;
+    });
+  }
+
+  const today = new Date();
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="font-display text-base text-foreground capitalize">{monthName}</h3>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setCursor(new Date(year, month - 1, 1))}
+            aria-label={dict.prevMonth}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-muted hover:text-foreground"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setCursor(new Date())}
+            className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-muted hover:text-foreground"
+          >
+            {dict.todayCta}
+          </button>
+          <button
+            type="button"
+            onClick={() => setCursor(new Date(year, month + 1, 1))}
+            aria-label={dict.nextMonth}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-muted hover:text-foreground"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 gap-1 text-center text-[10px] uppercase tracking-[0.18em] text-muted/70">
+        {weekdayLabels.map((w, i) => (
+          <span key={i} className="py-1">
+            {w}
+          </span>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {cells.map((d, i) => {
+          if (!d) {
+            return <div key={i} className="aspect-square rounded-lg bg-transparent" />;
+          }
+          const isToday =
+            d.getFullYear() === today.getFullYear() &&
+            d.getMonth() === today.getMonth() &&
+            d.getDate() === today.getDate();
+          const list = eventsOn(d);
+          return (
+            <div
+              key={i}
+              className={`relative flex aspect-square flex-col gap-0.5 rounded-lg border border-white/5 p-1.5 ${
+                isToday ? "ring-2 ring-brand/50" : ""
+              }`}
+            >
+              <span
+                className={`text-[11px] font-medium ${
+                  isToday ? "text-brand" : "text-foreground/80"
+                }`}
+              >
+                {d.getDate()}
+              </span>
+              <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
+                {list.slice(0, 3).map((e) => (
+                  <span
+                    key={e.id}
+                    title={e.title}
+                    className="block truncate rounded-md px-1 py-0.5 text-[9px]"
+                    style={{ background: `${e.color}25`, color: e.color }}
+                  >
+                    {e.title}
+                  </span>
+                ))}
+                {list.length > 3 && (
+                  <span className="text-[9px] text-muted">+{list.length - 3}</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

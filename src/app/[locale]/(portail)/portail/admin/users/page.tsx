@@ -15,25 +15,44 @@ export default async function UsersPage({
   const dict = getDictionary(locale as Locale);
   const supabase = await getServerSupabase();
 
-  const [{ data }, { data: members }, { data: cohorts }] = await Promise.all([
+  const [{ data }, { data: members }, { data: cohorts }, { data: programs }] = await Promise.all([
     supabase
       .from("profiles")
       .select("id,email,full_name,role,status,created_at")
       .order("created_at", { ascending: false }),
     supabase.from("cohort_members").select("student_id,cohort_id"),
-    supabase.from("cohorts").select("id,name"),
+    supabase.from("cohorts").select("id,name,program_id"),
+    supabase.from("programs").select("id,code,name_fr,name_en").order("sort_order"),
   ]);
 
-  const cohortName = new Map((cohorts ?? []).map((c) => [c.id as string, c.name as string]));
+  const cohortNameMap = new Map((cohorts ?? []).map((c) => [c.id as string, c.name as string]));
+  const cohortProgramMap = new Map(
+    (cohorts ?? []).map((c) => [c.id as string, c.program_id as string | null]),
+  );
+
   const memberCohorts = new Map<string, string[]>();
+  const memberPrograms = new Map<string, Set<string>>();
   for (const m of members ?? []) {
     const sid = m.student_id as string;
     const cid = m.cohort_id as string;
-    const arr = memberCohorts.get(sid) ?? [];
-    const n = cohortName.get(cid);
-    if (n) arr.push(n);
-    memberCohorts.set(sid, arr);
+    const cohortName = cohortNameMap.get(cid);
+    const programId = cohortProgramMap.get(cid);
+    if (cohortName) {
+      const arr = memberCohorts.get(sid) ?? [];
+      arr.push(cohortName);
+      memberCohorts.set(sid, arr);
+    }
+    if (programId) {
+      const set = memberPrograms.get(sid) ?? new Set<string>();
+      set.add(programId);
+      memberPrograms.set(sid, set);
+    }
   }
+
+  const programOptions = (programs ?? []).map((p) => ({
+    id: p.id as string,
+    label: `${p.code as string} · ${(locale === "fr" ? p.name_fr : p.name_en) as string}`,
+  }));
 
   return (
     <>
@@ -44,6 +63,8 @@ export default async function UsersPage({
           dict={dict.portail.admin}
           roleLabels={dict.portail.common.roles}
           canEditRoles={me.role === "admin"}
+          canImpersonate={me.role === "admin"}
+          programs={programOptions}
           rows={(data ?? []).map((r) => ({
             id: r.id as string,
             email: r.email as string,
@@ -52,6 +73,7 @@ export default async function UsersPage({
             status: r.status as "pending" | "approved" | "refused",
             createdAt: r.created_at as string,
             cohorts: memberCohorts.get(r.id as string) ?? [],
+            programIds: Array.from(memberPrograms.get(r.id as string) ?? []),
           }))}
         />
       </div>

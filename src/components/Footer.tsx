@@ -26,7 +26,7 @@ export function Footer({
         <div className="md:col-span-2">
           <Link href={`/${locale}`} className="inline-flex items-center gap-3">
             <span className="relative h-10 w-10">
-              <Image src="/3m-logo.png" alt="3M Ministry" fill sizes="40px" className="object-contain" />
+              <Image src="/3m-logo.png" alt="3M Ministry" fill sizes="40px" className="object-contain accent-logo" />
             </span>
             <div>
               <div className="text-base font-semibold tracking-tight">3M Ministry</div>

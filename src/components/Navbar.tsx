@@ -95,7 +95,7 @@ export function Navbar({
               alt="3M Ministry"
               fill
               sizes="40px"
-              className="object-contain transition-transform duration-700 group-hover:rotate-[12deg]"
+              className="object-contain accent-logo transition-transform duration-700 group-hover:rotate-[12deg]"
               priority
             />
           </span>

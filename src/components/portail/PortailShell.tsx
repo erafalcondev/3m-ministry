@@ -175,7 +175,7 @@ export function PortailShell({
       {/* Mobile top bar */}
       <header className="relative z-20 flex items-center justify-between border-b border-border/60 bg-background/80 px-4 py-3 backdrop-blur-xl md:hidden">
         <Link href={landingPath(locale, user.role)} className="flex items-center gap-2">
-          <Image src="/3m-logo.png" alt="3M" width={26} height={26} className="object-contain" />
+          <Image src="/3m-logo.png" alt="3M" width={26} height={26} className="object-contain accent-logo" />
           <span className="font-display text-sm">{dict.sidebar.brand}</span>
         </Link>
         <button
@@ -195,7 +195,7 @@ export function PortailShell({
             href={landingPath(locale, user.role)}
             className="flex items-center gap-2.5"
           >
-            <Image src="/3m-logo.png" alt="3M" width={30} height={30} className="object-contain" />
+            <Image src="/3m-logo.png" alt="3M" width={30} height={30} className="object-contain accent-logo" />
             <span className="font-display text-base tracking-tight">{dict.sidebar.brand}</span>
           </Link>
 
@@ -271,7 +271,7 @@ export function PortailShell({
                   href={landingPath(locale, user.role)}
                   className="flex items-center gap-2.5"
                 >
-                  <Image src="/3m-logo.png" alt="3M" width={30} height={30} className="object-contain" />
+                  <Image src="/3m-logo.png" alt="3M" width={30} height={30} className="object-contain accent-logo" />
                   <span className="font-display text-base tracking-tight">{dict.sidebar.brand}</span>
                 </Link>
                 <nav className="mt-8 flex-1 space-y-7">

@@ -15,14 +15,17 @@ export default async function TimelinePage({
   const dict = getDictionary(locale as Locale);
   const supabase = await getServerSupabase();
 
-  const { data: programs } = await supabase
-    .from("programs")
-    .select("id,code,name_fr,name_en,color")
-    .order("sort_order");
-  const { data: cohorts } = await supabase
-    .from("cohorts")
-    .select("id,program_id,name,start_date,end_date,status")
-    .order("start_date");
+  const [{ data: programs }, { data: cohorts }, { data: events }] = await Promise.all([
+    supabase.from("programs").select("id,code,name_fr,name_en,color").order("sort_order"),
+    supabase
+      .from("cohorts")
+      .select("id,program_id,name,start_date,end_date,status")
+      .order("start_date"),
+    supabase
+      .from("events")
+      .select("id,title,start_at,end_at,color,kind")
+      .order("start_at"),
+  ]);
 
   return (
     <>
@@ -48,6 +51,14 @@ export default async function TimelinePage({
             startDate: c.start_date as string,
             endDate: c.end_date as string,
             status: c.status as "planned" | "active" | "completed" | "canceled",
+          }))}
+          events={(events ?? []).map((e) => ({
+            id: e.id as string,
+            title: e.title as string,
+            startAt: e.start_at as string,
+            endAt: e.end_at as string | null,
+            color: e.color as string,
+            kind: e.kind as string,
           }))}
         />
       </div>

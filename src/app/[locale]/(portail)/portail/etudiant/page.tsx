@@ -31,12 +31,15 @@ export default async function StudentDashboard({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role,full_name")
+    .select("role,full_name,email")
     .eq("id", user.id)
     .single();
   if (profile?.role && profile.role !== "student") {
     redirect(portailLanding(locale, profile.role as UserRole));
   }
+  const firstName = ((profile?.full_name as string | null) || (profile?.email as string) || "")
+    .split(/\s+/)[0]
+    .replace(/[<>@.]/g, "");
 
   // Cohorts this student is in
   const { data: cohortLinks } = await supabase
@@ -172,7 +175,14 @@ export default async function StudentDashboard({
 
   return (
     <>
-      <PageHeader title={dict.portail.student.welcome} />
+      <PageHeader
+        title={
+          <>
+            <span className="wave-emoji">👋</span> {dict.portail.greetings.wave} {firstName}
+          </>
+        }
+        description={dict.portail.student.welcome}
+      />
 
       {totalCount > 0 && (
         <section className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5">

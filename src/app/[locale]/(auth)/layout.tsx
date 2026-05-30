@@ -39,7 +39,7 @@ export default async function AuthLayout({
           </Link>
           <Link href={`/${locale}`} className="flex items-center gap-2" aria-label="3M Ministry">
             <span className="relative h-8 w-8">
-              <Image src="/3m-logo.png" alt="3M Ministry" fill sizes="32px" className="object-contain" priority />
+              <Image src="/3m-logo.png" alt="3M Ministry" fill sizes="32px" className="object-contain accent-logo" priority />
             </span>
             <span className="hidden text-sm font-medium tracking-wide sm:block">3M Ministry</span>
           </Link>

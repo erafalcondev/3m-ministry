@@ -25,9 +25,12 @@ export default async function AdminDashboard({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  await requireRole(locale, ADMIN_ONLY);
+  const me = await requireRole(locale, ADMIN_ONLY);
   const dict = getDictionary(locale as Locale);
   const supabase = await getServerSupabase();
+  const firstName = ((me.fullName || me.email) ?? "")
+    .split(/\s+/)[0]
+    .replace(/[<>@.]/g, "");
 
   const [
     { count: pendingCount },
@@ -110,7 +113,14 @@ export default async function AdminDashboard({
 
   return (
     <>
-      <PageHeader title={dict.portail.admin.welcome} />
+      <PageHeader
+        title={
+          <>
+            <span className="wave-emoji">👋</span> {dict.portail.greetings.wave} {firstName}
+          </>
+        }
+        description={dict.portail.admin.welcome}
+      />
 
       {/* Highlights */}
       <section className="mt-8">

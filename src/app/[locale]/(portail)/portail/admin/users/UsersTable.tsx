@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState, Fragment, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Check, X, AlertCircle } from "lucide-react";
+import { Check, X, AlertCircle, LogIn, Search } from "lucide-react";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/fr";
@@ -22,6 +22,7 @@ type Row = {
   status: "pending" | "approved" | "refused";
   createdAt: string;
   cohorts: string[];
+  programIds: string[];
 };
 
 function fmtDate(iso: string, locale: Locale) {
@@ -45,17 +46,55 @@ export function UsersTable({
   dict,
   roleLabels,
   canEditRoles,
+  canImpersonate,
+  programs,
   rows,
 }: {
   locale: Locale;
   dict: AdminDict;
   roleLabels: RoleLabels;
   canEditRoles: boolean;
+  canImpersonate: boolean;
+  programs: { id: string; label: string }[];
   rows: Row[];
 }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [errorByRow, setErrorByRow] = useState<Record<string, string | null>>({});
+  const [query, setQuery] = useState("");
+  const [filterRole, setFilterRole] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<string>("");
+  const [filterProgram, setFilterProgram] = useState<string>("");
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (q) {
+        const hay = `${r.fullName ?? ""} ${r.email}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (filterRole && r.role !== filterRole) return false;
+      if (filterStatus && r.status !== filterStatus) return false;
+      if (filterProgram && !r.programIds.includes(filterProgram)) return false;
+      return true;
+    });
+  }, [rows, query, filterRole, filterStatus, filterProgram]);
+
+  async function impersonate(id: string, label: string) {
+    if (!confirm(`${dict.loginAsCta} ${label}? ${dict.loginAsConfirm}`)) return;
+    setBusyId(id);
+    setErrorByRow((m) => ({ ...m, [id]: null }));
+    const supabase = getBrowserSupabase();
+    await supabase.auth.signOut();
+    const res = await fetch(`/api/admin/impersonate?target=${id}&locale=${locale}`, { method: "POST" });
+    const json = await res.json();
+    setBusyId(null);
+    if (!res.ok || !json.url) {
+      setErrorByRow((m) => ({ ...m, [id]: json.error || "Erreur impersonation" }));
+      return;
+    }
+    window.location.href = json.url;
+  }
 
   async function setRole(id: string, role: Role) {
     setBusyId(id);
@@ -96,21 +135,67 @@ export function UsersTable({
     router.refresh();
   }
 
-  if (rows.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-6 py-16 text-center text-sm text-muted">
-        {dict.usersEmpty}
-      </div>
-    );
-  }
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]"
-    >
+    <div>
+      {/* Filters */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search
+            size={13}
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted"
+          />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={dict.filterSearch}
+            className="h-9 w-full rounded-full border border-white/10 bg-white/5 pl-9 pr-4 text-xs text-foreground placeholder:text-muted/70 focus:border-brand/60 focus:outline-none"
+          />
+        </div>
+        <select
+          value={filterRole}
+          onChange={(e) => setFilterRole(e.target.value)}
+          className="h-9 rounded-full border border-white/10 bg-background/70 px-4 text-xs text-foreground focus:border-brand/60 focus:outline-none"
+        >
+          <option value="">{dict.filterAllRoles}</option>
+          {ROLE_OPTIONS.map((r) => (
+            <option key={r} value={r}>{roleLabels[r]}</option>
+          ))}
+        </select>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="h-9 rounded-full border border-white/10 bg-background/70 px-4 text-xs text-foreground focus:border-brand/60 focus:outline-none"
+        >
+          <option value="">{dict.filterAllStatuses}</option>
+          <option value="pending">{dict.status.pending}</option>
+          <option value="approved">{dict.status.approved}</option>
+          <option value="refused">{dict.status.refused}</option>
+        </select>
+        <select
+          value={filterProgram}
+          onChange={(e) => setFilterProgram(e.target.value)}
+          className="h-9 rounded-full border border-white/10 bg-background/70 px-4 text-xs text-foreground focus:border-brand/60 focus:outline-none"
+        >
+          <option value="">{dict.filterAllPrograms}</option>
+          {programs.map((p) => (
+            <option key={p.id} value={p.id}>{p.label}</option>
+          ))}
+        </select>
+        <span className="ml-auto text-xs text-muted">{filtered.length}</span>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-6 py-16 text-center text-sm text-muted">
+          {dict.usersEmpty}
+        </div>
+      ) : (
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]"
+      >
       <div className="overflow-x-auto">
         <table className="w-full min-w-[820px] text-left text-sm">
           <thead>
@@ -124,7 +209,7 @@ export function UsersTable({
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => {
+            {filtered.map((r) => {
               const busy = busyId === r.id;
               const err = errorByRow[r.id];
               return (
@@ -182,18 +267,32 @@ export function UsersTable({
                       </button>
                     </div>
                   ) : canEditRoles ? (
-                    <select
-                      value={r.role}
-                      disabled={busy || r.status !== "approved"}
-                      onChange={(e) => setRole(r.id, e.target.value as Role)}
-                      className="rounded-full border border-white/10 bg-background/70 px-3 py-1 text-xs text-foreground focus:border-brand/60 focus:outline-none disabled:opacity-50"
-                    >
-                      {ROLE_OPTIONS.map((opt) => (
-                        <option key={opt} value={opt}>
-                          {roleLabels[opt]}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <select
+                        value={r.role}
+                        disabled={busy || r.status !== "approved"}
+                        onChange={(e) => setRole(r.id, e.target.value as Role)}
+                        className="rounded-full border border-white/10 bg-background/70 px-3 py-1 text-xs text-foreground focus:border-brand/60 focus:outline-none disabled:opacity-50"
+                      >
+                        {ROLE_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {roleLabels[opt]}
+                          </option>
+                        ))}
+                      </select>
+                      {canImpersonate && r.status === "approved" && (
+                        <button
+                          type="button"
+                          onClick={() => impersonate(r.id, r.fullName || r.email)}
+                          disabled={busy}
+                          aria-label={dict.loginAsCta}
+                          title={dict.loginAsCta}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 text-muted transition hover:border-brand/40 hover:bg-brand/10 hover:text-brand disabled:opacity-50"
+                        >
+                          <LogIn size={11} />
+                        </button>
+                      )}
+                    </div>
                   ) : (
                     <span className="text-xs text-muted">{roleLabels[r.role]}</span>
                   )}
@@ -215,6 +314,8 @@ export function UsersTable({
           </tbody>
         </table>
       </div>
-    </motion.div>
+      </motion.div>
+      )}
+    </div>
   );
 }
