@@ -3,7 +3,20 @@
 import { useState, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, LinkIcon, FileText, Video, Headphones, FileBox, Presentation, Link as LinkLucide, Trash2, ExternalLink, Filter } from "lucide-react";
+import {
+  Upload,
+  LinkIcon,
+  FileText,
+  Video,
+  Headphones,
+  FileBox,
+  Presentation,
+  Link as LinkLucide,
+  Trash2,
+  ExternalLink,
+  Search,
+  RotateCcw,
+} from "lucide-react";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/fr";
@@ -41,6 +54,7 @@ const KIND_ICONS: Record<Kind, React.ReactNode> = {
 };
 
 const KIND_OPTIONS: Kind[] = ["link", "file", "document", "video", "audio", "slides"];
+const VISIBILITY_OPTIONS: Visibility[] = ["public", "students", "staff"];
 
 function humanSize(bytes: number | null): string {
   if (!bytes) return "";
@@ -76,22 +90,36 @@ export function ResourcesClient({
   canWrite: boolean;
 }) {
   const router = useRouter();
+  const [query, setQuery] = useState("");
   const [filterKind, setFilterKind] = useState<string>("");
   const [filterProgram, setFilterProgram] = useState<string>("");
   const [filterLang, setFilterLang] = useState<string>("");
+  const [filterVis, setFilterVis] = useState<string>("");
   const [mode, setMode] = useState<"none" | "upload" | "link">("none");
   const [pending, startTransition] = useTransition();
 
-  const filtered = useMemo(
-    () =>
-      rows.filter((r) => {
-        if (filterKind && r.kind !== filterKind) return false;
-        if (filterProgram && r.programId !== filterProgram) return false;
-        if (filterLang && r.language !== filterLang) return false;
-        return true;
-      }),
-    [rows, filterKind, filterProgram, filterLang],
-  );
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (q) {
+        const hay = `${r.title} ${r.description ?? ""} ${r.tags.join(" ")}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (filterKind && r.kind !== filterKind) return false;
+      if (filterProgram && r.programId !== filterProgram) return false;
+      if (filterLang && r.language !== filterLang) return false;
+      if (filterVis && r.visibility !== filterVis) return false;
+      return true;
+    });
+  }, [rows, query, filterKind, filterProgram, filterLang, filterVis]);
+
+  function clearAll() {
+    setQuery("");
+    setFilterKind("");
+    setFilterProgram("");
+    setFilterLang("");
+    setFilterVis("");
+  }
 
   function remove(id: string, storagePath: string | null) {
     if (!confirm("?")) return;
@@ -106,159 +134,252 @@ export function ResourcesClient({
   }
 
   const programMap = new Map(programs.map((p) => [p.id, p]));
+  const anyFilterActive = Boolean(query || filterKind || filterProgram || filterLang || filterVis);
 
   return (
-    <div>
-      {/* Toolbar */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <Filter size={14} className="text-muted" />
-        <select
-          value={filterKind}
-          onChange={(e) => setFilterKind(e.target.value)}
-          className="h-9 rounded-full border border-white/10 bg-background/70 px-4 text-xs text-foreground focus:border-brand/60 focus:outline-none"
-        >
-          <option value="">{dict.filterKind}</option>
-          {KIND_OPTIONS.map((k) => (
-            <option key={k} value={k}>
-              {dict[`kind${k.charAt(0).toUpperCase() + k.slice(1)}` as keyof DamDict] as string}
-            </option>
-          ))}
-        </select>
-        <select
-          value={filterProgram}
-          onChange={(e) => setFilterProgram(e.target.value)}
-          className="h-9 rounded-full border border-white/10 bg-background/70 px-4 text-xs text-foreground focus:border-brand/60 focus:outline-none"
-        >
-          <option value="">{dict.filterProgram}</option>
-          {programs.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.code}
-            </option>
-          ))}
-        </select>
-        <select
-          value={filterLang}
-          onChange={(e) => setFilterLang(e.target.value)}
-          className="h-9 rounded-full border border-white/10 bg-background/70 px-4 text-xs text-foreground focus:border-brand/60 focus:outline-none"
-        >
-          <option value="">{dict.filterLanguage}</option>
-          <option value="fr">FR</option>
-          <option value="en">EN</option>
-        </select>
-        {canWrite && (
-          <div className="ml-auto flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setMode("link")}
-              className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 text-xs text-muted transition hover:border-brand/40 hover:bg-brand/10 hover:text-foreground"
-            >
-              <LinkIcon size={13} />
-              {dict.addLinkCta}
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("upload")}
-              className="inline-flex h-9 items-center gap-2 rounded-full bg-brand px-4 text-xs font-medium text-[#031019] hover:shadow-[0_10px_30px_-10px_rgba(79,195,220,0.6)]"
-            >
-              <Upload size={13} />
-              {dict.uploadCta}
-            </button>
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-[260px_1fr]">
+      {/* Left sidebar — search + filters */}
+      <aside className="space-y-5 md:sticky md:top-6 md:self-start">
+        <div className="relative">
+          <Search
+            size={14}
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted"
+          />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={dict.searchPlaceholder}
+            className="h-10 w-full rounded-full border border-white/10 bg-white/5 pl-9 pr-4 text-sm text-foreground placeholder:text-muted/70 focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/30"
+          />
+        </div>
+
+        <FilterGroup
+          title={dict.typeSection}
+          options={[
+            { value: "", label: dict.filterKind },
+            ...KIND_OPTIONS.map((k) => ({
+              value: k,
+              label: dict[`kind${k.charAt(0).toUpperCase() + k.slice(1)}` as keyof DamDict] as string,
+            })),
+          ]}
+          selected={filterKind}
+          onChange={setFilterKind}
+        />
+
+        <FilterGroup
+          title={dict.programSection}
+          options={[
+            { value: "", label: dict.filterProgram },
+            ...programs.map((p) => ({ value: p.id, label: p.code })),
+          ]}
+          selected={filterProgram}
+          onChange={setFilterProgram}
+        />
+
+        <FilterGroup
+          title={dict.languageSection}
+          options={[
+            { value: "", label: dict.filterLanguage },
+            { value: "fr", label: "FR" },
+            { value: "en", label: "EN" },
+          ]}
+          selected={filterLang}
+          onChange={setFilterLang}
+        />
+
+        <FilterGroup
+          title={dict.visibilitySection}
+          options={[
+            { value: "", label: "—" },
+            ...VISIBILITY_OPTIONS.map((v) => ({
+              value: v,
+              label:
+                v === "public"
+                  ? dict.visibilityPublic
+                  : v === "students"
+                    ? dict.visibilityStudents
+                    : dict.visibilityStaff,
+            })),
+          ]}
+          selected={filterVis}
+          onChange={setFilterVis}
+        />
+
+        {anyFilterActive && (
+          <button
+            type="button"
+            onClick={clearAll}
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-muted hover:text-foreground"
+          >
+            <RotateCcw size={11} />
+            {dict.clearFilters}
+          </button>
+        )}
+      </aside>
+
+      {/* Right main — actions + grid */}
+      <div>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <span className="text-xs text-muted">
+            {filtered.length} {dict.results}
+          </span>
+          {canWrite && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setMode("link")}
+                className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 text-xs text-muted transition hover:border-brand/40 hover:bg-brand/10 hover:text-foreground"
+              >
+                <LinkIcon size={13} />
+                {dict.addLinkCta}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("upload")}
+                className="inline-flex h-9 items-center gap-2 rounded-full bg-brand px-4 text-xs font-medium text-[#031019] hover:shadow-[0_10px_30px_-10px_rgba(79,195,220,0.6)]"
+              >
+                <Upload size={13} />
+                {dict.uploadCta}
+              </button>
+            </div>
+          )}
+        </div>
+
+        <AnimatePresence>
+          {mode !== "none" && (
+            <ResourceForm
+              mode={mode}
+              dict={dict}
+              programs={programs}
+              onClose={() => setMode("none")}
+              onSaved={() => {
+                setMode("none");
+                router.refresh();
+              }}
+            />
+          )}
+        </AnimatePresence>
+
+        {filtered.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-6 py-16 text-center text-sm text-muted">
+            {dict.empty}
           </div>
+        ) : (
+          <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
+            <AnimatePresence initial={false}>
+              {filtered.map((r) => {
+                const prog = r.programId ? programMap.get(r.programId) : null;
+                return (
+                  <motion.li
+                    key={r.id}
+                    layout
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/15 text-brand">
+                        {KIND_ICONS[r.kind]}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm text-foreground">{r.title}</h3>
+                        <div className="mt-1 flex flex-wrap items-baseline gap-2">
+                          {prog && (
+                            <span
+                              className="rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.18em]"
+                              style={{ background: `${prog.color}25`, color: prog.color }}
+                            >
+                              {prog.code}
+                            </span>
+                          )}
+                          <span className="text-[10px] uppercase tracking-[0.18em] text-muted">
+                            {r.language.toUpperCase()}
+                          </span>
+                        </div>
+                        {r.description && (
+                          <p className="mt-2 text-xs text-muted line-clamp-2 text-pretty">{r.description}</p>
+                        )}
+                        <p className="mt-2 text-[10px] text-muted/70">
+                          {fmtDate(r.createdAt, locale)}
+                          {r.fileType && ` · ${r.fileType}`}
+                          {r.sizeBytes && ` · ${humanSize(r.sizeBytes)}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center gap-2">
+                      {r.kind === "link" && r.url ? (
+                        <a
+                          href={r.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-brand/15 px-3 py-1 text-xs text-brand transition hover:bg-brand/25"
+                        >
+                          <ExternalLink size={12} />
+                          {dict.openLink}
+                        </a>
+                      ) : r.storagePath ? (
+                        <DownloadButton path={r.storagePath} label={dict.download} />
+                      ) : null}
+                      {canWrite && (
+                        <button
+                          type="button"
+                          onClick={() => remove(r.id, r.storagePath)}
+                          disabled={pending}
+                          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-muted hover:border-red-400/40 hover:bg-red-400/10 hover:text-red-200 disabled:opacity-50"
+                        >
+                          <Trash2 size={11} />
+                          {dict.deleteCta}
+                        </button>
+                      )}
+                    </div>
+                  </motion.li>
+                );
+              })}
+            </AnimatePresence>
+          </ul>
         )}
       </div>
+    </div>
+  );
+}
 
-      <AnimatePresence>
-        {mode !== "none" && (
-          <ResourceForm
-            mode={mode}
-            dict={dict}
-            programs={programs}
-            onClose={() => setMode("none")}
-            onSaved={() => {
-              setMode("none");
-              router.refresh();
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-6 py-16 text-center text-sm text-muted">
-          {dict.empty}
-        </div>
-      ) : (
-        <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
-          <AnimatePresence initial={false}>
-            {filtered.map((r) => {
-              const prog = r.programId ? programMap.get(r.programId) : null;
-              return (
-                <motion.li
-                  key={r.id}
-                  layout
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/15 text-brand">
-                      {KIND_ICONS[r.kind]}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-baseline gap-2">
-                        <h3 className="text-sm text-foreground">{r.title}</h3>
-                        {prog && (
-                          <span
-                            className="rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.18em]"
-                            style={{ background: `${prog.color}25`, color: prog.color }}
-                          >
-                            {prog.code}
-                          </span>
-                        )}
-                        <span className="text-[10px] uppercase tracking-[0.18em] text-muted">
-                          {r.language.toUpperCase()}
-                        </span>
-                      </div>
-                      {r.description && <p className="mt-1 text-xs text-muted text-pretty">{r.description}</p>}
-                      <p className="mt-2 text-[10px] text-muted/70">
-                        {fmtDate(r.createdAt, locale)}
-                        {r.fileType && ` · ${r.fileType}`}
-                        {r.sizeBytes && ` · ${humanSize(r.sizeBytes)}`}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-center gap-2">
-                    {r.kind === "link" && r.url ? (
-                      <a
-                        href={r.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-full bg-brand/15 px-3 py-1 text-xs text-brand transition hover:bg-brand/25"
-                      >
-                        <ExternalLink size={12} />
-                        {dict.openLink}
-                      </a>
-                    ) : r.storagePath ? (
-                      <DownloadButton path={r.storagePath} label={dict.download} />
-                    ) : null}
-                    {canWrite && (
-                      <button
-                        type="button"
-                        onClick={() => remove(r.id, r.storagePath)}
-                        disabled={pending}
-                        className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-muted hover:border-red-400/40 hover:bg-red-400/10 hover:text-red-200 disabled:opacity-50"
-                      >
-                        <Trash2 size={11} />
-                        {dict.deleteCta}
-                      </button>
-                    )}
-                  </div>
-                </motion.li>
-              );
-            })}
-          </AnimatePresence>
-        </ul>
-      )}
+function FilterGroup({
+  title,
+  options,
+  selected,
+  onChange,
+}: {
+  title: string;
+  options: { value: string; label: string }[];
+  selected: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <p className="mb-2 px-1 text-[10px] uppercase tracking-[0.22em] text-muted/70">{title}</p>
+      <ul className="space-y-0.5">
+        {options.map((o) => {
+          const active = o.value === selected;
+          return (
+            <li key={o.value || "__all__"}>
+              <button
+                type="button"
+                onClick={() => onChange(o.value)}
+                className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition ${
+                  active
+                    ? "bg-brand/15 text-brand font-medium"
+                    : "text-muted hover:bg-white/5 hover:text-foreground"
+                }`}
+              >
+                <span>{o.label}</span>
+                {active && <span className="text-[10px]">●</span>}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
@@ -302,7 +423,7 @@ function ResourceForm({
   const [description, setDescription] = useState("");
   const [url, setUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const [kind, setKind] = useState<Kind>(mode === "link" ? "link" : "document");
+  const [kind] = useState<Kind>(mode === "link" ? "link" : "document");
   const [programId, setProgramId] = useState<string>("");
   const [visibility, setVisibility] = useState<Visibility>("students");
   const [language, setLanguage] = useState<string>("fr");

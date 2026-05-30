@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import type { Locale } from "@/i18n/config";
 import type { UserRole } from "@/lib/supabase/types";
 import { Button } from "@/components/ui/Button";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 type NavLabels = {
   home: string;
@@ -134,6 +135,9 @@ export function Navbar({
         </nav>
 
         <div className="flex items-center gap-2">
+          <span className="hidden md:inline-flex">
+            <ThemeToggle variant="icon" />
+          </span>
           <Link
             href={otherPath}
             className="hidden h-9 items-center rounded-full border border-white/10 bg-white/5 px-3 text-xs font-medium uppercase tracking-[0.18em] text-muted transition hover:border-brand/50 hover:bg-brand/10 hover:text-foreground md:inline-flex"

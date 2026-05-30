@@ -15,7 +15,7 @@
   --font-display: var(--font-display);
 }
 
-:root {
+:root, :root[data-theme="dark"] {
   --background: #050a14;
   --foreground: #e7eef7;
   --surface: #0a1426;
@@ -28,10 +28,50 @@
   --accent: #fbbf66;
 }
 
+:root[data-theme="light"] {
+  --background: #f5f8fc;
+  --foreground: #0d1729;
+  --surface: #ffffff;
+  --surface-2: #eef3fa;
+  --muted: #4a5871;
+  --border: rgba(13, 23, 41, 0.12);
+  --brand: #1c7d99;
+  --brand-soft: #156d87;
+  --brand-glow: rgba(28, 125, 153, 0.25);
+  --accent: #b97a16;
+}
+
 html, body {
   background: var(--background);
   color: var(--foreground);
 }
+
+/* In light mode the "glass" overlays that the UI uses everywhere
+   (bg-white/5, border-white/10, etc.) become invisible. We rewrite them
+   to dark-tinted equivalents so cards, borders and hovers still pop. */
+:root[data-theme="light"] .bg-white\/5 { background-color: rgba(13, 23, 41, 0.04); }
+:root[data-theme="light"] .bg-white\/10 { background-color: rgba(13, 23, 41, 0.06); }
+:root[data-theme="light"] .bg-white\/\[0\.03\] { background-color: rgba(13, 23, 41, 0.03); }
+:root[data-theme="light"] .bg-white\/\[0\.04\] { background-color: rgba(13, 23, 41, 0.04); }
+:root[data-theme="light"] .bg-white\/\[0\.06\] { background-color: rgba(13, 23, 41, 0.06); }
+:root[data-theme="light"] .border-white\/5 { border-color: rgba(13, 23, 41, 0.08); }
+:root[data-theme="light"] .border-white\/10 { border-color: rgba(13, 23, 41, 0.1); }
+:root[data-theme="light"] .border-white\/15 { border-color: rgba(13, 23, 41, 0.14); }
+:root[data-theme="light"] .border-white\/20 { border-color: rgba(13, 23, 41, 0.2); }
+:root[data-theme="light"] .border-white\/\[0\.04\] { border-color: rgba(13, 23, 41, 0.06); }
+:root[data-theme="light"] .border-border\/60 { border-color: rgba(13, 23, 41, 0.16); }
+:root[data-theme="light"] .bg-background\/60 { background-color: rgba(245, 248, 252, 0.85); }
+:root[data-theme="light"] .bg-background\/70 { background-color: rgba(245, 248, 252, 0.92); }
+:root[data-theme="light"] .bg-background\/80 { background-color: rgba(245, 248, 252, 0.95); }
+:root[data-theme="light"] .bg-background\/85 { background-color: rgba(245, 248, 252, 0.95); }
+:root[data-theme="light"] .bg-background\/95 { background-color: rgba(245, 248, 252, 0.97); }
+:root[data-theme="light"] .text-foreground\/90 { color: rgba(13, 23, 41, 0.88); }
+:root[data-theme="light"] .text-muted\/70 { color: rgba(74, 88, 113, 0.78); }
+:root[data-theme="light"] .text-muted\/60 { color: rgba(74, 88, 113, 0.68); }
+:root[data-theme="light"] .text-muted\/80 { color: rgba(74, 88, 113, 0.88); }
+:root[data-theme="light"] .text-brand { color: var(--brand); }
+:root[data-theme="light"] .bg-surface\/70 { background-color: rgba(255, 255, 255, 0.92); }
+:root[data-theme="light"] .bg-surface\/95 { background-color: rgba(255, 255, 255, 0.97); }
 
 html {
   scroll-behavior: smooth;

@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBrowserSupabase } from "@/lib/supabase/client";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/fr";
 import type { UserRole } from "@/lib/supabase/types";
@@ -56,7 +57,6 @@ function getNavSections(
           { href: `${base}/admin/courses`, label: dict.sidebar.links.courses, icon: <BookOpen size={16} /> },
           { href: `${base}/admin/resources`, label: dict.sidebar.links.dam, icon: <Library size={16} /> },
           { href: `${base}/admin/timeline`, label: dict.sidebar.links.timeline, icon: <CalendarRange size={16} /> },
-          { href: `${base}/admin/assignments`, label: dict.sidebar.links.assignments_admin, icon: <Link2 size={16} /> },
           { href: `${base}/admin/exports`, label: dict.sidebar.links.exports, icon: <FileDown size={16} /> },
           { href: `${base}/admin/audit`, label: dict.sidebar.links.audit, icon: <Activity size={16} /> },
         ],
@@ -351,7 +351,10 @@ function UserCard({
         </div>
       </div>
 
-      {/* Language toggle */}
+      {/* Theme + Language toggles */}
+      <div className="flex items-center justify-between gap-2">
+        <ThemeToggle variant="pill" />
+      </div>
       <div
         className="flex items-center rounded-full border border-white/10 bg-background/40 p-0.5 text-[10px] uppercase tracking-[0.18em]"
         role="group"

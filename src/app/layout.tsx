@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Fraunces } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider, ThemeFlashScript } from "@/components/theme/ThemeProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -40,8 +41,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="fr" className={`${inter.variable} ${display.variable}`}>
-      <body className="min-h-screen antialiased">{children}</body>
+    <html lang="fr" className={`${inter.variable} ${display.variable}`} suppressHydrationWarning>
+      <body className="min-h-screen antialiased">
+        <ThemeFlashScript />
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }
