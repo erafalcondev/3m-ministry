@@ -39,7 +39,13 @@ export function LoginForm({
       });
 
       if (signInErr || !data.user) {
-        setError(dict.errorInvalid);
+        const msg = signInErr?.message?.toLowerCase() ?? "";
+        const code = (signInErr as { code?: string } | null)?.code ?? "";
+        if (code === "email_not_confirmed" || msg.includes("not confirmed")) {
+          setError(dict.errorPending);
+        } else {
+          setError(dict.errorInvalid);
+        }
         return;
       }
 
