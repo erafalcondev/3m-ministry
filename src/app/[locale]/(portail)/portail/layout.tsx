@@ -23,7 +23,7 @@ export default async function PortailLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id,email,full_name,role,status,must_change_password")
+    .select("id,email,full_name,role,status,must_change_password,avatar_url")
     .eq("id", user.id)
     .single();
 
@@ -57,6 +57,7 @@ export default async function PortailLayout({
         email: profile.email as string,
         fullName: profile.full_name as string | null,
         role: profile.role as UserRole,
+        avatarUrl: profile.avatar_url as string | null,
       }}
       openTicketsCount={openTicketsCount}
     >

@@ -52,12 +52,9 @@ function getNavSections(
   if (role === "admin") {
     return [
       {
-        title: dict.sidebar.sections.admin,
+        title: dict.sidebar.sections.main,
         links: [
           { href: `${base}/admin`, label: dict.sidebar.links.dashboard, icon: <LayoutDashboard size={16} /> },
-          { href: `${base}/admin/approvals`, label: dict.sidebar.links.approvals, icon: <ClipboardCheck size={16} /> },
-          { href: `${base}/admin/users`, label: dict.sidebar.links.users, icon: <UserCog size={16} /> },
-          { href: `${base}/admin/programs`, label: dict.sidebar.links.programs, icon: <GraduationCap size={16} /> },
           { href: `${base}/admin/cohorts`, label: dict.sidebar.links.cohorts, icon: <Layers size={16} /> },
           { href: `${base}/admin/courses`, label: dict.sidebar.links.courses, icon: <BookOpen size={16} /> },
           { href: `${base}/admin/resources`, label: dict.sidebar.links.dam, icon: <Library size={16} /> },
@@ -69,7 +66,16 @@ function getNavSections(
             icon: <MessageCircle size={16} />,
             badge: openTicketsCount,
           },
+          { href: `${base}/contacts`, label: dict.sidebar.links.directory, icon: <Users size={16} /> },
           { href: `${base}/admin/analytics`, label: dict.sidebar.links.analytics, icon: <BarChart3 size={16} /> },
+        ],
+      },
+      {
+        title: dict.sidebar.sections.admin,
+        links: [
+          { href: `${base}/admin/approvals`, label: dict.sidebar.links.approvals, icon: <ClipboardCheck size={16} /> },
+          { href: `${base}/admin/users`, label: dict.sidebar.links.users, icon: <UserCog size={16} /> },
+          { href: `${base}/admin/programs`, label: dict.sidebar.links.programs, icon: <GraduationCap size={16} /> },
           { href: `${base}/admin/exports`, label: dict.sidebar.links.exports, icon: <FileDown size={16} /> },
           { href: `${base}/admin/audit`, label: dict.sidebar.links.audit, icon: <Activity size={16} /> },
         ],
@@ -86,6 +92,7 @@ function getNavSections(
           { href: `${base}/admin/cohorts`, label: dict.sidebar.links.cohorts, icon: <Layers size={16} /> },
           { href: `${base}/admin/timeline`, label: dict.sidebar.links.timeline, icon: <CalendarRange size={16} /> },
           { href: `${base}/etudiant/questions`, label: dict.sidebar.links.tickets, icon: <MessageCircle size={16} /> },
+          { href: `${base}/contacts`, label: dict.sidebar.links.directory, icon: <Users size={16} /> },
           { href: `${base}/admin/exports`, label: dict.sidebar.links.exports, icon: <FileDown size={16} /> },
         ],
       },
@@ -99,8 +106,8 @@ function getNavSections(
           { href: `${base}/coordinator`, label: dict.sidebar.links.dashboard, icon: <LayoutDashboard size={16} /> },
           { href: `${base}/admin/cohorts`, label: dict.sidebar.links.cohorts, icon: <Layers size={16} /> },
           { href: `${base}/admin/timeline`, label: dict.sidebar.links.timeline, icon: <CalendarRange size={16} /> },
-          { href: `${base}/admin/users`, label: dict.sidebar.links.users, icon: <Users size={16} /> },
           { href: `${base}/etudiant/questions`, label: dict.sidebar.links.tickets, icon: <MessageCircle size={16} /> },
+          { href: `${base}/contacts`, label: dict.sidebar.links.directory, icon: <Users size={16} /> },
           { href: `${base}/admin/exports`, label: dict.sidebar.links.exports, icon: <FileDown size={16} /> },
         ],
       },
@@ -115,6 +122,7 @@ function getNavSections(
           { href: `${base}/coach/students`, label: dict.sidebar.links.students, icon: <Users size={16} /> },
           { href: `${base}/coach/log`, label: dict.sidebar.links.log, icon: <ClipboardList size={16} /> },
           { href: `${base}/etudiant/questions`, label: dict.sidebar.links.tickets, icon: <MessageCircle size={16} /> },
+          { href: `${base}/contacts`, label: dict.sidebar.links.directory, icon: <Users size={16} /> },
         ],
       },
     ];
@@ -129,6 +137,7 @@ function getNavSections(
         { href: `${base}/etudiant/ressources`, label: dict.sidebar.links.dam, icon: <Library size={16} /> },
         { href: `${base}/etudiant/cohorte`, label: dict.sidebar.links.cohorts, icon: <Layers size={16} /> },
         { href: `${base}/etudiant/questions`, label: dict.sidebar.links.tickets, icon: <MessageCircle size={16} /> },
+        { href: `${base}/contacts`, label: dict.sidebar.links.directory, icon: <Users size={16} /> },
       ],
     },
   ];
@@ -158,7 +167,7 @@ export function PortailShell({
 }: {
   locale: Locale;
   dict: PortailDict;
-  user: { id: string; email: string; fullName: string | null; role: UserRole };
+  user: { id: string; email: string; fullName: string | null; role: UserRole; avatarUrl?: string | null };
   openTicketsCount?: number;
   children: React.ReactNode;
 }) {
@@ -360,7 +369,7 @@ function UserCard({
   otherLocalePath,
   onSignOut,
 }: {
-  user: { id: string; email: string; fullName: string | null; role: UserRole };
+  user: { id: string; email: string; fullName: string | null; role: UserRole; avatarUrl?: string | null };
   dict: PortailDict;
   locale: Locale;
   otherLocale: Locale;
@@ -369,17 +378,26 @@ function UserCard({
 }) {
   return (
     <div className="mt-7 space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-      <div className="flex items-center gap-3">
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-xs font-medium text-[#031019]">
-          {initials(user.fullName, user.email)}
-        </span>
+      <Link
+        href={`/${locale}/portail/profil`}
+        className="flex items-center gap-3 transition hover:opacity-90"
+      >
+        {user.avatarUrl ? (
+          <span className="relative h-9 w-9 overflow-hidden rounded-full border border-white/10">
+            <Image src={user.avatarUrl} alt={user.fullName || user.email} fill sizes="36px" className="object-cover" />
+          </span>
+        ) : (
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-xs font-medium text-[#031019]">
+            {initials(user.fullName, user.email)}
+          </span>
+        )}
         <div className="min-w-0">
           <p className="truncate text-sm text-foreground">{user.fullName || user.email}</p>
           <p className="text-[10px] uppercase tracking-[0.18em] text-muted">
             {dict.common.roles[user.role]}
           </p>
         </div>
-      </div>
+      </Link>
 
       {/* Theme + Accent + Language toggles */}
       <div className="flex items-center justify-between gap-2">
