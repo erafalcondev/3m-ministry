@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { getBrowserSupabase } from "@/lib/supabase/client";
+import { DatePicker } from "@/components/ui/DatePicker";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/fr";
 
@@ -22,6 +23,7 @@ function addMonths(date: string, months: number): string {
 }
 
 export function CohortForm({
+  locale,
   dict,
   statusLabels,
   programs,
@@ -118,22 +120,20 @@ export function CohortForm({
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <Field label={dict.startLabel}>
-          <input
-            type="date"
-            required
+          <DatePicker
+            locale={locale}
             value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="h-11 w-full rounded-xl border border-white/10 bg-background/70 px-3 text-sm text-foreground focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/30"
+            onChange={setStartDate}
+            required
           />
         </Field>
         <Field label={dict.endLabel}>
-          <input
-            type="date"
-            required
+          <DatePicker
+            locale={locale}
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            onChange={setEndDate}
             min={startDate || undefined}
-            className="h-11 w-full rounded-xl border border-white/10 bg-background/70 px-3 text-sm text-foreground focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/30"
+            required
           />
         </Field>
       </div>

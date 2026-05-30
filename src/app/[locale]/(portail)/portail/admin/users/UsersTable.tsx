@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { getBrowserSupabase } from "@/lib/supabase/client";
@@ -95,8 +96,22 @@ export function UsersTable({
                 key={r.id}
                 className="border-b border-white/[0.04] transition hover:bg-white/[0.02]"
               >
-                <td className="px-5 py-4 text-foreground">{r.fullName || "—"}</td>
-                <td className="px-5 py-4 text-muted">{r.email}</td>
+                <td className="px-5 py-4">
+                  <Link
+                    href={`/${locale}/portail/admin/contacts/${r.id}`}
+                    className="text-foreground transition hover:text-brand"
+                  >
+                    {r.fullName || "—"}
+                  </Link>
+                </td>
+                <td className="px-5 py-4">
+                  <Link
+                    href={`/${locale}/portail/admin/contacts/${r.id}`}
+                    className="text-muted transition hover:text-foreground"
+                  >
+                    {r.email}
+                  </Link>
+                </td>
                 <td className="px-5 py-4">
                   <span
                     className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] ${statusColor[r.status]}`}

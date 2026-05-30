@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, Flag } from "lucide-react";
 import { getBrowserSupabase } from "@/lib/supabase/client";
+import { DatePicker } from "@/components/ui/DatePicker";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/fr";
 
@@ -102,12 +103,7 @@ export function CohortMilestonesClient({
                 placeholder={dict.milestoneTitleLabel}
                 className="h-9 rounded-xl border border-white/10 bg-background/70 px-3 text-sm text-foreground focus:border-brand/60 focus:outline-none"
               />
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="h-9 rounded-xl border border-white/10 bg-background/70 px-3 text-sm text-foreground focus:border-brand/60 focus:outline-none"
-              />
+              <DatePicker locale={locale} value={date} onChange={setDate} />
               <select
                 value={kind}
                 onChange={(e) => setKind(e.target.value as MilestoneKind)}

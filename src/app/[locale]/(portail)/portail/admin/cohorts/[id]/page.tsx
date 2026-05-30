@@ -7,6 +7,7 @@ import { getServerSupabase } from "@/lib/supabase/server";
 import { requireRole, STAFF } from "@/lib/portail/access";
 import { CohortMembersClient } from "./CohortMembersClient";
 import { CohortMilestonesClient } from "./CohortMilestonesClient";
+import { CohortSessionsClient } from "./CohortSessionsClient";
 
 function fmtDate(iso: string, locale: Locale) {
   return new Date(iso).toLocaleDateString(locale === "fr" ? "fr-CA" : "en-CA", {
@@ -91,6 +92,7 @@ export default async function CohortDetailPage({
     .map((s) => ({
       id: s.id as string,
       label: (s.full_name as string | null) || (s.email as string),
+      email: s.email as string,
     }));
 
   const { data: milestones } = await supabase
@@ -98,6 +100,26 @@ export default async function CohortDetailPage({
     .select("id,date,title,kind,notes")
     .eq("cohort_id", id)
     .order("date");
+
+  // Sessions + attendance for this cohort
+  const { data: sessions } = await supabase
+    .from("cohort_sessions")
+    .select("id,date,start_time,end_time,location,agenda,status")
+    .eq("cohort_id", id)
+    .order("date", { ascending: false });
+  const sessionIds = (sessions ?? []).map((s) => s.id as string);
+  let attendance: { sessionId: string; studentId: string; status: "present" | "absent" | "excused" | "online" }[] = [];
+  if (sessionIds.length > 0) {
+    const { data: attRows } = await supabase
+      .from("session_attendance")
+      .select("session_id,student_id,status")
+      .in("session_id", sessionIds);
+    attendance = (attRows ?? []).map((a) => ({
+      sessionId: a.session_id as string,
+      studentId: a.student_id as string,
+      status: a.status as "present" | "absent" | "excused" | "online",
+    }));
+  }
 
   const canWrite = me.role === "admin" || me.role === "coordinator";
 
@@ -164,9 +186,35 @@ export default async function CohortDetailPage({
         </h2>
         <CohortMembersClient
           cohortId={cohort.id as string}
+          locale={locale as Locale}
           students={students}
           eligible={eligible}
           dict={dict.portail.cohorts}
+          canWrite={canWrite}
+        />
+      </section>
+
+      {/* Sessions (Phase 2B) */}
+      <section className="mt-10">
+        <h2 className="mb-1 font-display text-lg text-foreground">
+          {dict.portail.sessions.title}
+        </h2>
+        <p className="mb-3 max-w-2xl text-sm text-muted text-pretty">{dict.portail.sessions.intro}</p>
+        <CohortSessionsClient
+          cohortId={cohort.id as string}
+          locale={locale as Locale}
+          dict={dict.portail.sessions}
+          sessions={(sessions ?? []).map((s) => ({
+            id: s.id as string,
+            date: s.date as string,
+            startTime: s.start_time as string | null,
+            endTime: s.end_time as string | null,
+            location: s.location as string | null,
+            agenda: s.agenda as string | null,
+            status: s.status as "planned" | "completed" | "canceled",
+          }))}
+          members={students.map((s) => ({ id: s.id, name: s.label }))}
+          attendance={attendance}
           canWrite={canWrite}
         />
       </section>
