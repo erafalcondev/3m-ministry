@@ -77,17 +77,31 @@ export default async function StudentDashboard({
     ]),
   );
 
-  let courses: { id: string; title: string; description: string | null; programCode: string | null; programColor: string | null }[] = [];
-  let assignments: { id: string; title: string; dueDate: string | null; courseTitle: string }[] = [];
+  let courses: {
+    id: string;
+    title: string;
+    description: string | null;
+    externalUrl: string | null;
+    programCode: string | null;
+    programColor: string | null;
+  }[] = [];
+  let assignments: {
+    id: string;
+    title: string;
+    externalUrl: string | null;
+    instructions: string | null;
+    dueDate: string | null;
+    courseTitle: string;
+  }[] = [];
   let resources: { id: string; title: string; kind: string; url: string | null; storagePath: string | null }[] = [];
 
   if (courseIds.length > 0) {
     const [{ data: courseRows }, { data: programsRows }, { data: asgRows }, { data: crRows }] = await Promise.all([
-      supabase.from("courses").select("id,title,description,program_id").in("id", courseIds).eq("status", "published"),
+      supabase.from("courses").select("id,title,description,external_url,program_id").in("id", courseIds).eq("status", "published"),
       supabase.from("programs").select("id,code,color"),
       supabase
         .from("assignments")
-        .select("id,title,due_date,course_id")
+        .select("id,title,external_url,instructions,due_date,course_id")
         .in("course_id", courseIds)
         .order("due_date", { ascending: true })
         .limit(8),
@@ -109,6 +123,7 @@ export default async function StudentDashboard({
         id: c.id as string,
         title: c.title as string,
         description: c.description as string | null,
+        externalUrl: c.external_url as string | null,
         programCode: prog?.code ?? null,
         programColor: prog?.color ?? null,
       };
@@ -116,6 +131,8 @@ export default async function StudentDashboard({
     assignments = (asgRows ?? []).map((a) => ({
       id: a.id as string,
       title: a.title as string,
+      externalUrl: a.external_url as string | null,
+      instructions: a.instructions as string | null,
       dueDate: a.due_date as string | null,
       courseTitle: courseTitleMap.get(a.course_id as string) ?? "—",
     }));
@@ -153,8 +170,8 @@ export default async function StudentDashboard({
           <EmptyCard text={dict.portail.student.courses.body} />
         ) : (
           <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
-            {courses.map((c) => (
-              <li key={c.id}>
+            {courses.map((c) => {
+              const inner = (
                 <div className="group flex h-full items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-brand/40 hover:bg-brand/[0.06]">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
@@ -168,10 +185,23 @@ export default async function StudentDashboard({
                     <p className="mt-1 text-sm text-foreground">{c.title}</p>
                     {c.description && <p className="mt-1 text-xs text-muted line-clamp-2">{c.description}</p>}
                   </div>
-                  <ArrowRight size={14} className="ml-3 shrink-0 text-muted transition group-hover:text-brand" />
+                  {c.externalUrl ? (
+                    <ExternalLink size={14} className="ml-3 shrink-0 text-muted transition group-hover:text-brand" />
+                  ) : (
+                    <ArrowRight size={14} className="ml-3 shrink-0 text-muted transition group-hover:text-brand" />
+                  )}
                 </div>
-              </li>
-            ))}
+              );
+              return (
+                <li key={c.id}>
+                  {c.externalUrl ? (
+                    <a href={c.externalUrl} target="_blank" rel="noopener noreferrer">{inner}</a>
+                  ) : (
+                    inner
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -186,17 +216,33 @@ export default async function StudentDashboard({
             {assignments.map((a) => (
               <li
                 key={a.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm"
+                className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm"
               >
-                <div className="min-w-0">
-                  <p className="text-foreground">{a.title}</p>
-                  <p className="text-xs text-muted">{a.courseTitle}</p>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-foreground">{a.title}</p>
+                    <p className="text-xs text-muted">{a.courseTitle}</p>
+                    {a.instructions && (
+                      <p className="mt-1 text-xs text-muted line-clamp-2 text-pretty">{a.instructions}</p>
+                    )}
+                  </div>
+                  {a.dueDate && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-muted">
+                      <Clock size={11} />
+                      {fmtDate(a.dueDate, locale as Locale)}
+                    </span>
+                  )}
                 </div>
-                {a.dueDate && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-muted">
-                    <Clock size={11} />
-                    {fmtDate(a.dueDate, locale as Locale)}
-                  </span>
+                {a.externalUrl && (
+                  <a
+                    href={a.externalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-brand/15 px-3 py-1 text-[11px] text-brand transition hover:bg-brand/25"
+                  >
+                    <ExternalLink size={11} />
+                    {a.externalUrl.replace(/^https?:\/\//, "").slice(0, 50)}
+                  </a>
                 )}
               </li>
             ))}

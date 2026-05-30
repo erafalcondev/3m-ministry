@@ -24,6 +24,7 @@ export function CourseForm({
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [externalUrl, setExternalUrl] = useState("");
   const [programId, setProgramId] = useState<string>("");
   const [instructorId, setInstructorId] = useState<string>("");
   const [status, setStatus] = useState<"draft" | "published" | "archived">("draft");
@@ -41,6 +42,7 @@ export function CourseForm({
         .insert({
           title,
           description: description || null,
+          external_url: externalUrl || null,
           program_id: programId || null,
           instructor_id: instructorId || null,
           status,
@@ -79,6 +81,15 @@ export function CourseForm({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           className="w-full rounded-xl border border-white/10 bg-background/70 px-3 py-2 text-sm text-foreground focus:border-brand/60 focus:outline-none"
+        />
+      </Field>
+      <Field label={dict.externalUrlLabel}>
+        <input
+          type="url"
+          value={externalUrl}
+          onChange={(e) => setExternalUrl(e.target.value)}
+          placeholder={dict.externalUrlPlaceholder}
+          className="h-11 w-full rounded-xl border border-white/10 bg-background/70 px-3 text-sm text-foreground focus:border-brand/60 focus:outline-none"
         />
       </Field>
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">

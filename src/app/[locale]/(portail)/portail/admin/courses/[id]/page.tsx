@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Calendar, Users as UsersIcon, Layers } from "lucide-react";
+import { ArrowLeft, Calendar, Users as UsersIcon, ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
 import { type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -25,7 +25,7 @@ export default async function CourseDetailPage({
 
   const { data: course } = await supabase
     .from("courses")
-    .select("id,title,description,status,program_id,instructor_id,created_at")
+    .select("id,title,description,external_url,status,program_id,instructor_id,created_at")
     .eq("id", id)
     .single();
   if (!course) notFound();
@@ -50,7 +50,7 @@ export default async function CourseDetailPage({
       : Promise.resolve({ data: null }),
     supabase.from("course_resources").select("resource_id,sort_order").eq("course_id", id).order("sort_order"),
     supabase.from("resources").select("id,title,kind,language").order("title"),
-    supabase.from("assignments").select("id,title,instructions,due_date,resource_id,created_at").eq("course_id", id).order("due_date"),
+    supabase.from("assignments").select("id,title,instructions,external_url,due_date,resource_id,created_at").eq("course_id", id).order("due_date"),
     supabase.from("course_notes").select("id,author_id,body,created_at").eq("course_id", id).order("created_at", { ascending: false }),
     supabase.from("course_students").select("student_id").eq("course_id", id),
     supabase.from("course_cohorts").select("cohort_id").eq("course_id", id),
@@ -158,6 +158,17 @@ export default async function CourseDetailPage({
             {course.description && (
               <p className="mt-2 max-w-2xl text-sm text-muted text-pretty">{course.description as string}</p>
             )}
+            {course.external_url && (
+              <a
+                href={course.external_url as string}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand/15 px-3 py-1.5 text-xs font-medium text-brand transition hover:bg-brand/25"
+              >
+                <ExternalLink size={12} />
+                {dict.portail.courses.openExternal}
+              </a>
+            )}
             <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted">
               {instructor && (
                 <span className="inline-flex items-center gap-1.5">
@@ -194,6 +205,7 @@ export default async function CourseDetailPage({
           id: a.id as string,
           title: a.title as string,
           instructions: a.instructions as string | null,
+          externalUrl: a.external_url as string | null,
           dueDate: a.due_date as string | null,
           resourceId: a.resource_id as string | null,
         }))}

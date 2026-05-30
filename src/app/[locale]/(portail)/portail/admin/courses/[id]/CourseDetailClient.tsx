@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Trash2, FileText, Send, Layers } from "lucide-react";
+import { Plus, X, Trash2, FileText, Send, Layers, ExternalLink } from "lucide-react";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import { SearchPicker } from "@/components/ui/SearchPicker";
 import { DatePicker } from "@/components/ui/DatePicker";
@@ -14,7 +14,14 @@ type CoursesDict = Dictionary["portail"]["courses"];
 
 type Resource = { id: string; title: string; kind: string; language: string };
 type AvailableResource = { id: string; label: string; secondary: string };
-type Assignment = { id: string; title: string; instructions: string | null; dueDate: string | null; resourceId: string | null };
+type Assignment = {
+  id: string;
+  title: string;
+  instructions: string | null;
+  externalUrl: string | null;
+  dueDate: string | null;
+  resourceId: string | null;
+};
 type Note = { id: string; authorId: string | null; authorName: string; body: string; createdAt: string };
 type AccessRow = { id: string; name: string };
 
@@ -63,6 +70,7 @@ export function CourseDetailClient({
   // Add assignment
   const [asgOpen, setAsgOpen] = useState(false);
   const [asgTitle, setAsgTitle] = useState("");
+  const [asgLink, setAsgLink] = useState("");
   const [asgInstr, setAsgInstr] = useState("");
   const [asgDue, setAsgDue] = useState("");
 
@@ -104,12 +112,14 @@ export function CourseDetailClient({
       const { error } = await supabase.from("assignments").insert({
         course_id: courseId,
         title: asgTitle,
+        external_url: asgLink || null,
         instructions: asgInstr || null,
         due_date: asgDue || null,
       });
       if (!error) {
         setAsgOpen(false);
         setAsgTitle("");
+        setAsgLink("");
         setAsgInstr("");
         setAsgDue("");
         router.refresh();
@@ -307,7 +317,16 @@ export function CourseDetailClient({
                   <DatePicker locale={locale} value={asgDue} onChange={setAsgDue} />
                 </Field>
               </div>
-              <Field label={dict.assignmentInstructions} className="mt-3">
+              <Field label={dict.assignmentLink} className="mt-3">
+                <input
+                  type="url"
+                  value={asgLink}
+                  onChange={(e) => setAsgLink(e.target.value)}
+                  placeholder={dict.assignmentLinkPlaceholder}
+                  className="h-11 w-full rounded-xl border border-white/10 bg-background/70 px-3 text-sm text-foreground focus:border-brand/60 focus:outline-none"
+                />
+              </Field>
+              <Field label={dict.assignmentNotes} className="mt-3">
                 <textarea
                   rows={3}
                   value={asgInstr}
@@ -351,7 +370,19 @@ export function CourseDetailClient({
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-foreground">{a.title}</p>
-                    {a.instructions && <p className="mt-1 text-xs text-muted text-pretty">{a.instructions}</p>}
+                    {a.externalUrl && (
+                      <a
+                        href={a.externalUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-brand/15 px-2.5 py-0.5 text-[11px] text-brand transition hover:bg-brand/25"
+                      >
+                        <ExternalLink size={10} />
+                        {a.externalUrl.replace(/^https?:\/\//, "").slice(0, 40)}
+                        {a.externalUrl.length > 47 ? "…" : ""}
+                      </a>
+                    )}
+                    {a.instructions && <p className="mt-1.5 text-xs text-muted text-pretty">{a.instructions}</p>}
                     {a.dueDate && (
                       <p className="mt-1 text-[11px] text-muted/70">
                         ⏰ {fmtDate(a.dueDate, locale)}

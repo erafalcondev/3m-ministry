@@ -1,6 +1,7 @@
 import { type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { requireRole, ADMIN_ONLY } from "@/lib/portail/access";
 import { PageHeader } from "@/components/portail/PageHeader";
 import { ApprovalsClient } from "./ApprovalsClient";
 
@@ -10,6 +11,7 @@ export default async function ApprovalsPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  await requireRole(locale, ADMIN_ONLY);
   const dict = getDictionary(locale as Locale);
   const supabase = await getServerSupabase();
 
