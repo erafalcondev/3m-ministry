@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, Trash2, MapPin, ExternalLink, CalendarPlus, Filter, ChevronLeft, ChevronRight, List, LayoutGrid } from "lucide-react";
@@ -199,15 +200,18 @@ export function EventsClient({
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-baseline gap-2">
+                    <Link
+                      href={`/${locale}/portail/events/${e.id}`}
+                      className="group flex flex-wrap items-baseline gap-2 transition"
+                    >
                       <span
                         className="rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.18em]"
                         style={{ background: `${e.color}25`, color: e.color }}
                       >
                         {dict.kinds[e.kind]}
                       </span>
-                      <h3 className="text-sm text-foreground">{e.title}</h3>
-                    </div>
+                      <h3 className="text-sm text-foreground group-hover:text-brand">{e.title}</h3>
+                    </Link>
                     {e.description && <p className="mt-1 text-xs text-muted text-pretty">{e.description}</p>}
                     <p className="mt-2 text-xs text-muted">
                       {fmtDateTime(e.startAt, locale, e.allDay)}
@@ -616,14 +620,15 @@ function MonthGrid({
               </span>
               <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
                 {list.slice(0, 3).map((e) => (
-                  <span
+                  <Link
                     key={e.id}
+                    href={`/${locale}/portail/events/${e.id}`}
                     title={e.title}
-                    className="block truncate rounded-md px-1 py-0.5 text-[9px]"
+                    className="block truncate rounded-md px-1 py-0.5 text-[9px] transition hover:brightness-125"
                     style={{ background: `${e.color}25`, color: e.color }}
                   >
                     {e.title}
-                  </span>
+                  </Link>
                 ))}
                 {list.length > 3 && (
                   <span className="text-[9px] text-muted">+{list.length - 3}</span>

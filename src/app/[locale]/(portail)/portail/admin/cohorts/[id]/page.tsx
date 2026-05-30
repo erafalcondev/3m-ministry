@@ -8,6 +8,7 @@ import { requireRole, STAFF } from "@/lib/portail/access";
 import { CohortMembersClient } from "./CohortMembersClient";
 import { CohortMilestonesClient } from "./CohortMilestonesClient";
 import { CohortSessionsClient } from "./CohortSessionsClient";
+import { CohortActions } from "./CohortActions";
 
 function fmtDate(iso: string, locale: Locale) {
   return new Date(iso).toLocaleDateString(locale === "fr" ? "fr-CA" : "en-CA", {
@@ -125,6 +126,17 @@ export default async function CohortDetailPage({
 
   const canWrite = me.role === "admin" || me.role === "coordinator";
 
+  // Programs list for the inline edit form
+  const { data: programsList } = await supabase
+    .from("programs")
+    .select("id,code,name_fr,name_en")
+    .eq("active", true)
+    .order("sort_order");
+  const programOptions = (programsList ?? []).map((p) => ({
+    id: p.id as string,
+    label: `${p.code as string} · ${(locale === "fr" ? p.name_fr : p.name_en) as string}`,
+  }));
+
   return (
     <>
       <Link
@@ -180,6 +192,26 @@ export default async function CohortDetailPage({
             </span>
           )}
         </div>
+
+        {canWrite && (
+          <CohortActions
+            locale={locale as Locale}
+            dict={dict.portail.cohorts}
+            statusLabels={dict.portail.common.cohortStatus}
+            cohort={{
+              id: cohort.id as string,
+              programId: cohort.program_id as string,
+              name: cohort.name as string,
+              startDate: cohort.start_date as string,
+              endDate: cohort.end_date as string,
+              rhythmText: cohort.rhythm_text as string | null,
+              location: cohort.location as string | null,
+              status: cohort.status as "planned" | "active" | "completed" | "canceled",
+              notes: cohort.notes as string | null,
+            }}
+            programs={programOptions}
+          />
+        )}
       </header>
 
       <section className="mt-10">

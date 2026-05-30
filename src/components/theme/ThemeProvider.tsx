@@ -6,18 +6,21 @@ import { getBrowserSupabase } from "@/lib/supabase/client";
 type Theme = "dark" | "light";
 
 /**
- * Curated 2025 designer palette — modern, vivid, premium UI brand colors
- * inspired by Linear (cobalt), Stripe (indigo), Vercel (electric blue),
- * Notion (coral) and Cal.com (cyan). All have proper contrast on both
- * light and dark backgrounds.
+ * 10 vibrant 2025 designer accents. Every value is mid-saturation, mid-luminance
+ * so it reads with adequate contrast on both #050a14 dark and #f5f8fc light
+ * backgrounds when used as bg-brand (with #031019 text) and text-brand.
  */
 const ACCENT_PRESETS = [
-  { value: "#0ea5e9", label: "Ocean" },    // electric sky blue
-  { value: "#6366f1", label: "Indigo" },   // Stripe / Linear indigo
+  { value: "#0ea5e9", label: "Ocean" },    // sky blue
+  { value: "#3b82f6", label: "Cobalt" },   // royal blue
+  { value: "#6366f1", label: "Indigo" },   // Linear indigo
   { value: "#8b5cf6", label: "Violet" },   // luxe violet
+  { value: "#d946ef", label: "Magenta" },  // electric magenta
   { value: "#ec4899", label: "Pink" },     // Vercel pink
+  { value: "#f43f5e", label: "Rose" },     // bold rose
+  { value: "#f97316", label: "Orange" },   // sunset orange
+  { value: "#eab308", label: "Gold" },     // saturated gold
   { value: "#10b981", label: "Emerald" },  // rich emerald
-  { value: "#f97316" },                    // sunset orange
 ];
 
 const DEFAULT_HUE = 191; // hue of the original brand cyan #4fc3dc

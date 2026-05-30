@@ -449,10 +449,13 @@ export default async function ContactPage({
                 key={h.id}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm"
               >
-                <div className="min-w-0 flex-1">
+                <Link
+                  href={`/${locale}/portail/assignments/${h.id}`}
+                  className="min-w-0 flex-1 transition hover:text-brand"
+                >
                   <p className="text-foreground">{h.title}</p>
                   <p className="text-xs text-muted">{h.courseTitle}</p>
-                </div>
+                </Link>
                 {h.dueDate && (
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-muted">
                     <Clock size={11} />

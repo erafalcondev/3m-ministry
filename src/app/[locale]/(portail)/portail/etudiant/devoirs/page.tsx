@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ClipboardList, Clock, ExternalLink } from "lucide-react";
+import { ClipboardList, Clock, ExternalLink, ChevronRight } from "lucide-react";
 import { type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { getServerSupabase } from "@/lib/supabase/server";
@@ -91,31 +92,36 @@ export default async function StudentAssignmentsPage({
         ) : (
           <ul className="space-y-2">
             {active.map((a) => (
-              <li key={a.id} className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 text-sm">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-foreground">{a.title}</p>
-                    <p className="text-xs text-muted">{a.courseTitle}</p>
-                    {a.instructions && <p className="mt-1 text-xs text-muted line-clamp-3 text-pretty">{a.instructions}</p>}
+              <li key={a.id}>
+                <Link
+                  href={`/${locale}/portail/assignments/${a.id}`}
+                  className="group block rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 text-sm transition hover:border-brand/40 hover:bg-brand/[0.06]"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-foreground">{a.title}</p>
+                      <p className="text-xs text-muted">{a.courseTitle}</p>
+                      {a.instructions && (
+                        <p className="mt-1 text-xs text-muted line-clamp-3 text-pretty">{a.instructions}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {a.dueDate && (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-muted">
+                          <Clock size={11} />
+                          {fmtDate(a.dueDate, locale as Locale)}
+                        </span>
+                      )}
+                      <ChevronRight size={14} className="text-muted transition group-hover:translate-x-0.5 group-hover:text-brand" />
+                    </div>
                   </div>
-                  {a.dueDate && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-muted">
-                      <Clock size={11} />
-                      {fmtDate(a.dueDate, locale as Locale)}
+                  {a.externalUrl && (
+                    <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-brand/15 px-3 py-1 text-[11px] text-brand">
+                      <ExternalLink size={11} />
+                      {a.externalUrl.replace(/^https?:\/\//, "").slice(0, 50)}
                     </span>
                   )}
-                </div>
-                {a.externalUrl && (
-                  <a
-                    href={a.externalUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-brand/15 px-3 py-1 text-[11px] text-brand transition hover:bg-brand/25"
-                  >
-                    <ExternalLink size={11} />
-                    {a.externalUrl.replace(/^https?:\/\//, "").slice(0, 50)}
-                  </a>
-                )}
+                </Link>
               </li>
             ))}
           </ul>

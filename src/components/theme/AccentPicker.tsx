@@ -35,10 +35,10 @@ export function AccentPicker() {
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            className="absolute bottom-full left-0 z-30 mb-2 w-48 rounded-2xl border border-white/10 bg-surface/95 p-3 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)] backdrop-blur-xl"
+            className="absolute bottom-full left-0 z-30 mb-2 w-56 rounded-2xl border border-white/10 bg-surface/95 p-3 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)] backdrop-blur-xl"
           >
             <p className="mb-2 text-[10px] uppercase tracking-[0.18em] text-muted">Accent</p>
-            <div className="grid grid-cols-6 gap-1.5">
+            <div className="grid grid-cols-5 gap-1.5">
               {presets.map((p) => (
                 <button
                   key={p.value}

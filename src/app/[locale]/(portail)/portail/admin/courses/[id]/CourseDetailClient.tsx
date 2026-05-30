@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Trash2, FileText, Send, Layers, ExternalLink, Pencil, Check } from "lucide-react";
+import { Plus, X, Trash2, FileText, Send, Layers, ExternalLink, Pencil, Check, MessageSquare } from "lucide-react";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import { SearchPicker } from "@/components/ui/SearchPicker";
 import { DatePicker } from "@/components/ui/DatePicker";
@@ -474,7 +475,14 @@ export function CourseDetailClient({
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Link
+                        href={`/${locale}/portail/assignments/${a.id}`}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-[11px] text-brand transition hover:bg-brand/20"
+                      >
+                        <MessageSquare size={11} />
+                        {dict.openAssignment ?? "Ouvrir"}
+                      </Link>
                       <button
                         type="button"
                         onClick={() => startEditAssignment(a)}

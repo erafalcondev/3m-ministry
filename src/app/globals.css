@@ -69,9 +69,26 @@ html, body {
 :root[data-theme="light"] .text-muted\/70 { color: rgba(74, 88, 113, 0.78); }
 :root[data-theme="light"] .text-muted\/60 { color: rgba(74, 88, 113, 0.68); }
 :root[data-theme="light"] .text-muted\/80 { color: rgba(74, 88, 113, 0.88); }
-:root[data-theme="light"] .text-brand { color: var(--brand); }
+:root[data-theme="light"] .text-brand { color: var(--brand-soft); }
 :root[data-theme="light"] .bg-surface\/70 { background-color: rgba(255, 255, 255, 0.92); }
 :root[data-theme="light"] .bg-surface\/95 { background-color: rgba(255, 255, 255, 0.97); }
+
+/* In light mode, low-opacity brand backgrounds (bg-brand/10, /15, /20) over a
+   white card become barely visible for warm/pale accents (gold, pink). Boost
+   the opacity floor so highlight chips and active states stay legible no
+   matter which accent the user picks. */
+:root[data-theme="light"] .bg-brand\/5 { background-color: color-mix(in srgb, var(--brand) 12%, transparent); }
+:root[data-theme="light"] .bg-brand\/10 { background-color: color-mix(in srgb, var(--brand) 18%, transparent); }
+:root[data-theme="light"] .bg-brand\/15 { background-color: color-mix(in srgb, var(--brand) 22%, transparent); }
+:root[data-theme="light"] .bg-brand\/20 { background-color: color-mix(in srgb, var(--brand) 28%, transparent); }
+:root[data-theme="light"] .bg-brand\/25 { background-color: color-mix(in srgb, var(--brand) 32%, transparent); }
+:root[data-theme="light"] .border-brand\/30 { border-color: color-mix(in srgb, var(--brand) 55%, transparent); }
+:root[data-theme="light"] .border-brand\/40 { border-color: color-mix(in srgb, var(--brand) 65%, transparent); }
+:root[data-theme="light"] .border-brand\/60 { border-color: var(--brand); }
+:root[data-theme="light"] .text-brand\/40 { color: color-mix(in srgb, var(--brand-soft) 70%, transparent); }
+:root[data-theme="light"] .text-brand\/60 { color: color-mix(in srgb, var(--brand-soft) 85%, transparent); }
+:root[data-theme="light"] .text-brand\/80 { color: var(--brand-soft); }
+:root[data-theme="light"] .text-brand\/90 { color: var(--brand-soft); }
 
 html {
   scroll-behavior: smooth;

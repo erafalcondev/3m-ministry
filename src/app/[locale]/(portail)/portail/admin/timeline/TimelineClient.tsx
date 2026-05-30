@@ -307,14 +307,14 @@ export function TimelineClient({
                         ((end.getTime() - start.getTime()) / span) * gridWidth,
                       );
                       if (left < 0 || left > gridWidth) return null;
-                      // Stagger vertically to avoid overlap on dense periods
                       const lane = i % 3;
                       const top = 6 + lane * 18;
                       return (
-                        <span
+                        <Link
                           key={e.id}
+                          href={`/${locale}/portail/events/${e.id}`}
                           title={`${e.title} — ${start.toLocaleDateString(locale === "fr" ? "fr-CA" : "en-CA")}`}
-                          className="absolute flex items-center gap-1 truncate rounded-full px-2 py-0.5 text-[10px] font-medium"
+                          className="absolute flex items-center gap-1 truncate rounded-full px-2 py-0.5 text-[10px] font-medium transition hover:brightness-125"
                           style={{
                             left,
                             maxWidth: w,
@@ -329,7 +329,7 @@ export function TimelineClient({
                             style={{ background: e.color }}
                           />
                           <span className="truncate">{e.title}</span>
-                        </span>
+                        </Link>
                       );
                     })}
                   </div>
@@ -484,10 +484,11 @@ function MonthGrid({
                   <span className="text-[9px] text-muted">+{cohortList.length - 2}</span>
                 )}
                 {evList.slice(0, 2).map((e) => (
-                  <span
+                  <Link
                     key={e.id}
+                    href={`/${locale}/portail/events/${e.id}`}
                     title={e.title}
-                    className="flex items-center gap-1 truncate rounded-md px-1 py-0.5 text-[9px]"
+                    className="flex items-center gap-1 truncate rounded-md px-1 py-0.5 text-[9px] transition hover:brightness-125"
                     style={{
                       background: `${e.color}25`,
                       color: e.color,
@@ -499,7 +500,7 @@ function MonthGrid({
                       style={{ background: e.color }}
                     />
                     <span className="truncate">{e.title}</span>
-                  </span>
+                  </Link>
                 ))}
                 {evList.length > 2 && (
                   <span className="text-[9px] text-muted">+{evList.length - 2}</span>
