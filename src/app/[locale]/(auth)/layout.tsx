@@ -15,6 +15,7 @@ export default async function AuthLayout({
   const { locale } = await params;
   const dict = getDictionary(locale as Locale);
   const backLabel = dict.auth.login.backHome;
+  const otherLocale: Locale = locale === "fr" ? "en" : "fr";
 
   return (
     <div className="relative isolate min-h-screen overflow-hidden bg-background text-foreground">
@@ -28,12 +29,21 @@ export default async function AuthLayout({
           <ArrowLeft size={16} />
           {backLabel}
         </Link>
-        <Link href={`/${locale}`} className="flex items-center gap-2" aria-label="3M Ministry">
-          <span className="relative h-8 w-8">
-            <Image src="/3m-logo.png" alt="3M Ministry" fill sizes="32px" className="object-contain" priority />
-          </span>
-          <span className="hidden text-sm font-medium tracking-wide sm:block">3M Ministry</span>
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/${otherLocale}/login`}
+            className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-muted transition hover:border-brand/50 hover:bg-brand/10 hover:text-foreground"
+            aria-label={`Switch to ${otherLocale.toUpperCase()}`}
+          >
+            {otherLocale.toUpperCase()}
+          </Link>
+          <Link href={`/${locale}`} className="flex items-center gap-2" aria-label="3M Ministry">
+            <span className="relative h-8 w-8">
+              <Image src="/3m-logo.png" alt="3M Ministry" fill sizes="32px" className="object-contain" priority />
+            </span>
+            <span className="hidden text-sm font-medium tracking-wide sm:block">3M Ministry</span>
+          </Link>
+        </div>
       </header>
 
       <main className="relative z-10 flex min-h-[calc(100vh-7rem)] items-center justify-center px-6 pb-16 pt-4 md:pt-8">

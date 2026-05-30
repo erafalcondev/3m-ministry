@@ -60,8 +60,8 @@ export default async function AdminDashboard({
     { label: dict.portail.common.roles.coach + "s", value: coaches ?? 0 },
     { label: dict.portail.common.roles.coordinator + "s", value: coordinators ?? 0 },
     { label: dict.portail.common.roles.director + "s", value: directors ?? 0 },
-    { label: `${dict.portail.sidebar.links.cohorts} (act.)`, value: cohortsActive ?? 0 },
-    { label: `${dict.portail.sidebar.links.cohorts} (à venir)`, value: cohortsPlanned ?? 0 },
+    { label: `${dict.portail.sidebar.links.cohorts} (${dict.portail.common.shortActive})`, value: cohortsActive ?? 0 },
+    { label: `${dict.portail.sidebar.links.cohorts} (${dict.portail.common.shortUpcoming})`, value: cohortsPlanned ?? 0 },
     { label: dict.portail.sidebar.links.programs, value: programs ?? 0 },
   ];
 
@@ -123,13 +123,13 @@ export default async function AdminDashboard({
 
       {/* Stats grid */}
       <section className="mt-10">
-        <h2 className="mb-3 font-display text-lg text-foreground">Statistiques</h2>
+        <h2 className="mb-3 font-display text-lg text-foreground">{dict.portail.common.stats}</h2>
         <DashboardStats stats={stats} />
       </section>
 
       {/* Quick links */}
       <section className="mt-10">
-        <h2 className="mb-3 font-display text-lg text-foreground">Raccourcis</h2>
+        <h2 className="mb-3 font-display text-lg text-foreground">{dict.portail.common.quickLinks}</h2>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {quickLinks.map((q) => (
             <Link

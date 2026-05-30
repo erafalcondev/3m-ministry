@@ -61,8 +61,8 @@ export default async function CoordinatorDashboard({
           stats={[
             { label: dict.portail.common.roles.student + "s", value: students ?? 0 },
             { label: dict.portail.common.roles.coach + "s", value: coaches ?? 0 },
-            { label: `${dict.portail.sidebar.links.cohorts} (act.)`, value: cohortsActive ?? 0 },
-            { label: `${dict.portail.sidebar.links.cohorts} (à venir)`, value: cohortsPlanned ?? 0 },
+            { label: `${dict.portail.sidebar.links.cohorts} (${dict.portail.common.shortActive})`, value: cohortsActive ?? 0 },
+            { label: `${dict.portail.sidebar.links.cohorts} (${dict.portail.common.shortUpcoming})`, value: cohortsPlanned ?? 0 },
           ]}
         />
       </section>

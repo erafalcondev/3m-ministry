@@ -329,6 +329,10 @@ export const en: Dictionary = {
       create: "Create",
       delete: "Delete",
       edit: "Edit",
+      stats: "Statistics",
+      quickLinks: "Quick links",
+      shortActive: "active",
+      shortUpcoming: "upcoming",
     },
     student: {
       welcome: "Welcome to your student space.",
@@ -399,6 +403,7 @@ export const en: Dictionary = {
       filterAll: "All programs",
       filterStatus: "All statuses",
       today: "Today",
+      colHeader: "Cohort",
       months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
     },
     exports: {

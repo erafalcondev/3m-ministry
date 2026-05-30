@@ -143,7 +143,7 @@ export function TimelineClient({
             {/* Header months row */}
             <div className="sticky top-0 z-10 flex border-b border-white/5 bg-background/60 backdrop-blur-xl">
               <div className="w-60 shrink-0 px-4 py-2 text-[10px] uppercase tracking-[0.18em] text-muted">
-                Cohorte
+                {dict.colHeader}
               </div>
               <div className="relative" style={{ width: gridWidth }}>
                 <div className="flex">

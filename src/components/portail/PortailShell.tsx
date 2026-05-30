@@ -4,7 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { locales } from "@/i18n/config";
 import {
   LayoutDashboard,
   BookOpen,
@@ -143,6 +144,17 @@ export function PortailShell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const sections = getNavSections(locale, user.role, dict);
 
+  const otherLocale: Locale = locale === "fr" ? "en" : "fr";
+  const otherLocalePath = useMemo(() => {
+    if (!pathname) return `/${otherLocale}`;
+    // Replace the leading /<locale> segment with the other locale.
+    const swapped = pathname.replace(
+      new RegExp(`^/(${locales.join("|")})(?=/|$)`),
+      `/${otherLocale}`,
+    );
+    return swapped || `/${otherLocale}`;
+  }, [pathname, otherLocale]);
+
   async function signOut() {
     const supabase = getBrowserSupabase();
     await supabase.auth.signOut();
@@ -221,7 +233,14 @@ export function PortailShell({
             ))}
           </nav>
 
-          <UserCard user={user} dict={dict} locale={locale} onSignOut={signOut} />
+          <UserCard
+            user={user}
+            dict={dict}
+            locale={locale}
+            otherLocale={otherLocale}
+            otherLocalePath={otherLocalePath}
+            onSignOut={signOut}
+          />
         </aside>
 
         {/* Mobile drawer */}
@@ -279,7 +298,14 @@ export function PortailShell({
                     </div>
                   ))}
                 </nav>
-                <UserCard user={user} dict={dict} locale={locale} onSignOut={signOut} />
+                <UserCard
+            user={user}
+            dict={dict}
+            locale={locale}
+            otherLocale={otherLocale}
+            otherLocalePath={otherLocalePath}
+            onSignOut={signOut}
+          />
               </motion.aside>
             </motion.div>
           )}
@@ -297,11 +323,15 @@ function UserCard({
   user,
   dict,
   locale,
+  otherLocale,
+  otherLocalePath,
   onSignOut,
 }: {
   user: { id: string; email: string; fullName: string | null; role: UserRole };
   dict: PortailDict;
   locale: Locale;
+  otherLocale: Locale;
+  otherLocalePath: string;
   onSignOut: () => void;
 }) {
   return (
@@ -317,6 +347,37 @@ function UserCard({
           </p>
         </div>
       </div>
+
+      {/* Language toggle */}
+      <div
+        className="flex items-center rounded-full border border-white/10 bg-background/40 p-0.5 text-[10px] uppercase tracking-[0.18em]"
+        role="group"
+        aria-label="Language"
+      >
+        <Link
+          href={locale === "fr" ? "#" : otherLocalePath}
+          aria-pressed={locale === "fr"}
+          className={`flex-1 rounded-full px-3 py-1 text-center transition ${
+            locale === "fr"
+              ? "bg-brand text-[#031019] font-medium"
+              : "text-muted hover:text-foreground"
+          }`}
+        >
+          FR
+        </Link>
+        <Link
+          href={locale === "en" ? "#" : otherLocalePath}
+          aria-pressed={locale === "en"}
+          className={`flex-1 rounded-full px-3 py-1 text-center transition ${
+            locale === "en"
+              ? "bg-brand text-[#031019] font-medium"
+              : "text-muted hover:text-foreground"
+          }`}
+        >
+          EN
+        </Link>
+      </div>
+
       <div className="flex items-center justify-between gap-2">
         <Link
           href={`/${locale}`}

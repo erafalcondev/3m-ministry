@@ -327,6 +327,10 @@ export const fr = {
       create: "Créer",
       delete: "Supprimer",
       edit: "Modifier",
+      stats: "Statistiques",
+      quickLinks: "Raccourcis",
+      shortActive: "act.",
+      shortUpcoming: "à venir",
     },
     student: {
       welcome: "Bienvenue dans votre espace étudiant.",
@@ -397,6 +401,7 @@ export const fr = {
       filterAll: "Tous les programmes",
       filterStatus: "Tous les statuts",
       today: "Aujourd'hui",
+      colHeader: "Cohorte",
       months: ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"],
     },
     exports: {
