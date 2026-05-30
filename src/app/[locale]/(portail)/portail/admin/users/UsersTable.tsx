@@ -1,9 +1,10 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, Fragment } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { Check, X, AlertCircle } from "lucide-react";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/fr";
@@ -53,14 +54,46 @@ export function UsersTable({
   rows: Row[];
 }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [errorByRow, setErrorByRow] = useState<Record<string, string | null>>({});
 
-  function setRole(id: string, role: Role) {
-    startTransition(async () => {
-      const supabase = getBrowserSupabase();
-      const { error } = await supabase.rpc("set_user_role", { target: id, new_role: role });
-      if (!error) router.refresh();
-    });
+  async function setRole(id: string, role: Role) {
+    setBusyId(id);
+    setErrorByRow((m) => ({ ...m, [id]: null }));
+    const supabase = getBrowserSupabase();
+    const { error } = await supabase.rpc("set_user_role", { target: id, new_role: role });
+    setBusyId(null);
+    if (error) {
+      setErrorByRow((m) => ({ ...m, [id]: error.message }));
+      return;
+    }
+    router.refresh();
+  }
+
+  async function approveUser(id: string) {
+    setBusyId(id);
+    setErrorByRow((m) => ({ ...m, [id]: null }));
+    const supabase = getBrowserSupabase();
+    const { error } = await supabase.rpc("approve_user", { target: id });
+    setBusyId(null);
+    if (error) {
+      setErrorByRow((m) => ({ ...m, [id]: error.message }));
+      return;
+    }
+    router.refresh();
+  }
+
+  async function refuseUser(id: string) {
+    setBusyId(id);
+    setErrorByRow((m) => ({ ...m, [id]: null }));
+    const supabase = getBrowserSupabase();
+    const { error } = await supabase.rpc("refuse_user", { target: id, reason: null });
+    setBusyId(null);
+    if (error) {
+      setErrorByRow((m) => ({ ...m, [id]: error.message }));
+      return;
+    }
+    router.refresh();
   }
 
   if (rows.length === 0) {
@@ -91,9 +124,12 @@ export function UsersTable({
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
+            {rows.map((r) => {
+              const busy = busyId === r.id;
+              const err = errorByRow[r.id];
+              return (
+              <Fragment key={r.id}>
               <tr
-                key={r.id}
                 className="border-b border-white/[0.04] transition hover:bg-white/[0.02]"
               >
                 <td className="px-5 py-4">
@@ -124,10 +160,31 @@ export function UsersTable({
                 </td>
                 <td className="px-5 py-4 text-muted">{fmtDate(r.createdAt, locale)}</td>
                 <td className="px-5 py-4">
-                  {canEditRoles ? (
+                  {canEditRoles && r.status === "pending" ? (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => approveUser(r.id)}
+                        disabled={busy}
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-brand px-3 py-1 text-[11px] font-semibold text-[#031019] shadow-[0_6px_18px_-6px_rgba(79,195,220,0.5)] transition hover:scale-[1.03] hover:shadow-[0_10px_24px_-6px_rgba(79,195,220,0.7)] active:scale-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <Check size={12} />
+                        {dict.approve}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => refuseUser(r.id)}
+                        disabled={busy}
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-white/15 bg-white/[0.04] px-3 py-1 text-[11px] font-medium text-foreground/90 transition hover:border-red-400/50 hover:bg-red-400/10 hover:text-red-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <X size={12} />
+                        {dict.refuse}
+                      </button>
+                    </div>
+                  ) : canEditRoles ? (
                     <select
                       value={r.role}
-                      disabled={pending || r.status !== "approved"}
+                      disabled={busy || r.status !== "approved"}
                       onChange={(e) => setRole(r.id, e.target.value as Role)}
                       className="rounded-full border border-white/10 bg-background/70 px-3 py-1 text-xs text-foreground focus:border-brand/60 focus:outline-none disabled:opacity-50"
                     >
@@ -142,7 +199,19 @@ export function UsersTable({
                   )}
                 </td>
               </tr>
-            ))}
+              {err && (
+                <tr>
+                  <td colSpan={6} className="px-5 pb-3">
+                    <div className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+                      <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                      <span className="text-pretty">{err}</span>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
