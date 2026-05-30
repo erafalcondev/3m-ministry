@@ -35,10 +35,10 @@
   --surface-2: #eef3fa;
   --muted: #4a5871;
   --border: rgba(13, 23, 41, 0.12);
-  --brand: #1c7d99;
-  --brand-soft: #156d87;
-  --brand-glow: rgba(28, 125, 153, 0.25);
   --accent: #b97a16;
+  /* --brand / --brand-soft / --brand-glow are NOT redefined here so that
+     the user's accent choice (applied as an inline style on :root) wins
+     in both dark and light modes. */
 }
 
 html, body {

@@ -27,6 +27,8 @@ import {
   Heart,
   Library,
   Calendar as CalendarIcon,
+  MessageCircle,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBrowserSupabase } from "@/lib/supabase/client";
@@ -60,6 +62,8 @@ function getNavSections(
           { href: `${base}/admin/resources`, label: dict.sidebar.links.dam, icon: <Library size={16} /> },
           { href: `${base}/admin/events`, label: dict.sidebar.links.events, icon: <CalendarIcon size={16} /> },
           { href: `${base}/admin/timeline`, label: dict.sidebar.links.timeline, icon: <CalendarRange size={16} /> },
+          { href: `${base}/admin/tickets`, label: dict.sidebar.links.tickets, icon: <MessageCircle size={16} /> },
+          { href: `${base}/admin/analytics`, label: dict.sidebar.links.analytics, icon: <BarChart3 size={16} /> },
           { href: `${base}/admin/exports`, label: dict.sidebar.links.exports, icon: <FileDown size={16} /> },
           { href: `${base}/admin/audit`, label: dict.sidebar.links.audit, icon: <Activity size={16} /> },
         ],
@@ -114,6 +118,7 @@ function getNavSections(
         { href: `${base}/etudiant/cours`, label: dict.sidebar.links.courses, icon: <BookOpen size={16} /> },
         { href: `${base}/etudiant/devoirs`, label: dict.sidebar.links.assignments, icon: <ClipboardList size={16} /> },
         { href: `${base}/etudiant/ressources`, label: dict.sidebar.links.resources, icon: <FolderOpen size={16} /> },
+        { href: `${base}/etudiant/questions`, label: dict.sidebar.links.tickets, icon: <MessageCircle size={16} /> },
       ],
     },
   ];
