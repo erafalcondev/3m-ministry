@@ -130,7 +130,7 @@ export function DatePicker({
                 root: "rdp text-foreground",
                 months: "flex flex-col",
                 month: "space-y-2",
-                caption: "flex items-center justify-between px-1 py-1",
+                month_caption: "flex items-center justify-between px-1 py-1",
                 caption_label: "text-sm font-medium",
                 nav: "flex items-center gap-1",
                 button_previous:
